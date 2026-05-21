@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>究極數位斑馬 - 王者進化版</title>
+    <style>
+        body { 
+            background-color: #2b2b2b; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            font-family: "Courier New", Courier, monospace; 
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        /* 電子雞機殼 */
+        #tamagotchi {
+            width: 340px; 
+            height: 520px; 
+            background: linear-gradient(145deg, #ffca58, #e6b042); 
+            border-radius: 50% 50% 45% 45%;
+            border: 8px solid #b8860b; 
+            position: relative; 
+            box-shadow: 0 15px 0 #8b6508, 0 25px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 螢幕外框 */
+        #screen-bezel {
+            width: 220px; 
+            height: 200px; 
+            background: #dcdcdc; 
+            margin-top: 70px;
+            border-radius: 20px; 
+            border: 3px inset #666; 
+            padding: 15px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        /* 實際螢幕 */
+        #screen {
+            width: 100%; 
+            height: 100%; 
+            border-radius: 8px; 
+            position: relative;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden; 
+            border: 2px solid #555;
+            transition: background 0.4s ease;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+        }
+
+        /* 背景樣式 */
+        .bg-normal { background: #9dbb94; }
+        .bg-feed { background: repeating-linear-gradient(45deg, #a8c99e, #a8c99e 15px, #9dbb94 15px, #9dbb94 30px); }
+        .bg-play { background: linear-gradient(to bottom, #8ce5ff 40%, #e0c888 40%); }
+        .bg-clean { background: radial-gradient(circle at center, #e0f7fa 0%, #81d4fa 100%); }
+
+        /* 斑馬本體 */
+        #zebra-container {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+        
+        #zebra { 
+            font-size: 60px; 
+            line-height: 1;
+            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.2));
+        }
+
+        /* 斑馬王的黃金發光效果 */
+        .king-glow {
+            filter: drop-shadow(0 0 10px gold) drop-shadow(2px 2px 0px rgba(0,0,0,0.2)) !important;
+        }
+        
+        @keyframes rainbowGlow {
+            0% { filter: hue-rotate(0deg) saturate(3) drop-shadow(0 0 10px red); }
+            33% { filter: hue-rotate(120deg) saturate(3) drop-shadow(0 0 10px lime); }
+            66% { filter: hue-rotate(240deg) saturate(3) drop-shadow(0 0 10px blue); }
+            100% { filter: hue-rotate(360deg) saturate(3) drop-shadow(0 0 10px red); }
+        }
+        @keyframes floatGhost {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .form-rainbow { animation: rainbowGlow 2.5s linear infinite !important; }
+        .form-golden { filter: drop-shadow(0 0 15px gold) sepia(1) saturate(5) hue-rotate(-30deg) !important; }
+        .form-zombie { filter: sepia(1) hue-rotate(80deg) saturate(2) brightness(0.8) drop-shadow(2px 2px 0 rgba(0,0,0,0.8)) !important; }
+        .form-ghost { opacity: 0.55; filter: drop-shadow(0 0 10px #fff) blur(0.5px) !important; animation: floatGhost 3s ease-in-out infinite; }
+        .form-alien { filter: sepia(1) hue-rotate(180deg) saturate(5) drop-shadow(0 0 15px cyan) !important; }
+        
+        /* 新增：海洋斑馬與皇帝斑馬特效 */
+        @keyframes floatWave {
+            0%, 100% { transform: translateY(0) skewX(0deg); }
+            50% { transform: translateY(-8px) skewX(-5deg); }
+        }
+        @keyframes emperorPulse {
+            0% { filter: drop-shadow(0 0 20px #800080) drop-shadow(0 0 40px #ffd700) sepia(0.5) hue-rotate(270deg) saturate(3); }
+            100% { filter: drop-shadow(0 0 30px #ff00ff) drop-shadow(0 0 50px #ffdf00) sepia(0.5) hue-rotate(290deg) saturate(5); }
+        }
+        .form-ocean { filter: sepia(1) hue-rotate(190deg) saturate(3) drop-shadow(0 0 15px #00bfff) opacity(0.9) !important; animation: floatWave 3s ease-in-out infinite; }
+        .form-emperor { animation: emperorPulse 1.5s infinite alternate !important; }
+
+        #poop { 
+            position: absolute; 
+            bottom: 20px; 
+            right: 20px; 
+            font-size: 30px; 
+            display: none; 
+            z-index: 2; 
+            animation: wiggle 2s infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        
+        /* 數值標籤 */
+        .stats-bar { 
+            font-size: 12px; 
+            color: #222; 
+            position: absolute; 
+            top: 5px; 
+            width: 90%; 
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold; 
+            z-index: 10; 
+            background: rgba(255,255,255,0.6); 
+            padding: 4px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .age-tag { 
+            position: absolute; 
+            bottom: 5px; 
+            left: 5px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #111; 
+            z-index: 10; 
+            background: rgba(255,255,255,0.6); 
+            padding: 3px 6px; 
+            border-radius: 5px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+
+        /* 機殼貼紙 */
+        .sticker {
+            position: absolute;
+            background: #fff;
+            padding: 3px 5px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 1px 3px 4px rgba(0,0,0,0.3);
+            font-size: 22px;
+            line-height: 1;
+            z-index: 3;
+            pointer-events: none; /* 避免點擊干擾 */
+        }
+        .sticker-1 { top: 35px; left: 30px; transform: rotate(-15deg); }
+        .sticker-2 { top: 25px; right: 35px; transform: rotate(20deg); font-size: 18px; }
+        .sticker-3 { bottom: 110px; left: 20px; transform: rotate(-25deg); }
+        .sticker-4 { bottom: 35px; right: 30px; transform: rotate(12deg); font-size: 20px; }
+
+        /* 按鈕區 */
+        .button-container { 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px; 
+            margin-top: 25px; 
+        }
+        .action-btn {
+            width: 60px; 
+            height: 60px; 
+            background: #fafafa; 
+            border-radius: 50%;
+            border: 4px solid #333; 
+            cursor: pointer; 
+            box-shadow: 0 6px 0 #555;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .action-btn:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 0px 0 #555; 
+        }
+        .btn-icon { font-size: 24px; line-height: 1; }
+        .btn-text { font-size: 9px; font-weight: bold; margin-top: 2px; color: #333;}
+
+        #msg-box { 
+            width: 75%; 
+            margin: 20px auto 0; 
+            background: rgba(255, 255, 255, 0.4); 
+            font-size: 13px; 
+            font-weight: bold; 
+            color: #222; 
+            text-align: center; 
+            min-height: 45px; 
+            border-radius: 8px; 
+            padding: 8px 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 2px dashed #8b6508;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        #warm-house {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 40%, #ffdfba 0%, #d2691e 60%, #5c2e0e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.8s ease;
+        }
+        .house-title {
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 0 0 10px #ff8c00, 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .house-desc {
+            font-size: 16px;
+            color: #fffde7;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        .egg-rack {
+            display: flex;
+            gap: 25px;
+            background: rgba(92, 46, 14, 0.8);
+            padding: 25px 35px;
+            border-radius: 30px;
+            border: 4px solid #3e1f08;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 15px 25px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        .egg-rack::after {
+            content: "";
+            position: absolute;
+            bottom: 10px; left: 5%; width: 90%; height: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            z-index: 0;
+            filter: blur(4px);
+        }
+        .egg-choice {
+            font-size: 55px;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: floatEgg 3s infinite ease-in-out;
+            z-index: 1;
+        }
+        .egg-choice:hover { transform: scale(1.2) translateY(-15px); }
+        .egg-choice:active { transform: scale(0.9); }
+        
+        /* 五顆蛋各自的微小色彩差異 */
+        .egg-1 { animation-delay: 0.0s; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)) hue-rotate(0deg); }
+        .egg-2 { animation-delay: 0.2s; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)) hue-rotate(45deg) sepia(0.3); }
+        .egg-3 { animation-delay: 0.4s; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)) hue-rotate(90deg) saturate(1.5); }
+        .egg-4 { animation-delay: 0.6s; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)) hue-rotate(180deg) brightness(1.2); }
+        .egg-5 { animation-delay: 0.8s; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.6)) hue-rotate(270deg) contrast(1.2); }
+
+        @keyframes floatEgg {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="warm-house">
+    <div class="house-title">🔥 溫暖的育嬰室 🔥</div>
+    <div class="house-desc">壁爐的柴火劈啪作響... 挑選一顆與你有緣的斑馬蛋吧！</div>
+    <div class="egg-rack">
+        <div class="egg-choice egg-1" onclick="selectEgg(1)">🥚</div>
+        <div class="egg-choice egg-2" onclick="selectEgg(2)">🥚</div>
+        <div class="egg-choice egg-3" onclick="selectEgg(3)">🥚</div>
+        <div class="egg-choice egg-4" onclick="selectEgg(4)">🥚</div>
+        <div class="egg-choice egg-5" onclick="selectEgg(5)">🥚</div>
+    </div>
+</div>
+
+<div id="tamagotchi">
+    <!-- 機殼貼紙裝飾 -->
+    <div class="sticker sticker-1">🦓</div>
+    <div class="sticker sticker-2">⭐</div>
+    <div class="sticker sticker-3">🌿</div>
+    <div class="sticker sticker-4">🦓❤️</div>
+
+    <!-- 螢幕區 -->
+    <div id="screen-bezel">
+        <div id="screen" class="bg-normal">
+            <div class="stats-bar">
+                <span>心情: <span id="hp">100</span></span>
+                <span>飽食: <span id="hg">80</span></span>
+            </div>
+            <div id="zebra-container">
+                <div id="zebra">🥚</div>
+            </div>
+            <div id="poop">💩</div>
+            <div class="age-tag"><span id="lv">斑馬蛋</span></div>
+        </div>
+    </div>
+    
+    <!-- 訊息區 -->
+    <div id="msg-box">等待孵化中...</div>
+
+    <!-- 控制按鈕 -->
+    <div class="button-container">
+        <button class="action-btn" onclick="handleAction('feed')">
+            <span class="btn-icon">🌿</span>
+            <span class="btn-text">餵食</span>
+        </button>
+        <button class="action-btn" onclick="handleAction('play')">
+            <span class="btn-icon">🏃</span>
+            <span class="btn-text">運動</span>
+        </button>
+        <button class="action-btn" onclick="handleAction('clean')">
+            <span class="btn-icon">🧽</span>
+            <span class="btn-text">打掃</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    // 遊戲狀態
+    let pet = {
+        hunger: 80,
+        happy: 80,
+        age: 0,
+        hasPoop: false,
+        isDead: false,
+        stage: "egg", // egg, baby, adult, king
+        form: "normal", // 隨機突變型態
+        formName: "",
+        bgTimeout: null,
+        eggHue: 0 // 記錄選到的蛋的顏色
+    };
+    
+    let gameInterval = null;
+
+    function selectEgg(eggId) {
+        // 隱藏溫暖的房子
+        const house = document.getElementById('warm-house');
+        house.style.opacity = '0';
+        setTimeout(() => {
+            house.style.display = 'none';
+        }, 800);
+
+        // 設定蛋的特殊顏色 (讓選到的蛋有一點色彩差異)
+        const hues = [0, 0, 45, 90, 180, 270];
+        pet.eggHue = hues[eggId];
+
+        // 啟動遊戲
+        startGame();
+    }
+
+    function startGame() {
+        updateUI();
+        updateMsg("正在溫暖的環境中孵化... 請等待！");
+        
+        // 啟動主時鐘
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameTick, 2000);
+    }
+
+    // 切換背景功能
+    function changeBackground(className) {
+        const screen = document.getElementById('screen');
+        screen.className = className;
+        
+        // 1.5秒後恢復正常背景
+        clearTimeout(pet.bgTimeout);
+        pet.bgTimeout = setTimeout(() => {
+            if(!pet.isDead) screen.className = 'bg-normal';
+        }, 1500);
+    }
+
+    // 玩家互動操作
+    function handleAction(type) {
+        if (pet.isDead) {
+            resetGame();
+            return;
+        }
+
+        if (pet.stage === "egg") {
+            updateMsg("噓... 斑馬蛋正在孵化，請耐心等待。");
+            return;
+        }
+
+        const zContainer = document.getElementById('zebra-container');
+        
+        if (type === 'feed') {
+            pet.hunger = Math.min(150, pet.hunger + 25); // 飽食度最高 150，超過 120 變胖
+            pet.happy = Math.min(100, pet.happy + 2);
+            updateMsg("嚼嚼... 斑馬大口吃草！");
+            changeBackground('bg-feed');
+            
+            // 吃東西彈跳動畫
+            zContainer.style.transform = getTransformStr() + " translateY(-15px)";
+            setTimeout(() => zContainer.style.transform = getTransformStr(), 300);
+
+        } else if (type === 'play') {
+            if (pet.hunger < 20) {
+                updateMsg("斑馬太餓了，跑不動啦...");
+                return;
+            }
+            pet.happy = Math.min(100, pet.happy + 20);
+            pet.hunger -= 15; // 跑步會大幅消耗熱量，可以用來減肥
+            updateMsg("喔呼！斑馬在草原上狂奔！");
+            changeBackground('bg-play');
+            
+            // 跑步搖擺動畫
+            zContainer.style.transform = getTransformStr() + " rotate(20deg)";
+            setTimeout(() => { zContainer.style.transform = getTransformStr() + " rotate(-20deg)"; }, 150);
+            setTimeout(() => { zContainer.style.transform = getTransformStr(); }, 300);
+
+        } else if (type === 'clean') {
+            if (pet.hasPoop) {
+                pet.hasPoop = false;
+                document.getElementById('poop').style.display = "none";
+                pet.happy = Math.min(100, pet.happy + 10);
+                updateMsg("刷刷刷！便便掃掉了，環境變乾淨了 ✨");
+            } else {
+                updateMsg("已經很乾淨了，斑馬開心地洗了個澡 🛁");
+            }
+            changeBackground('bg-clean');
+            
+            // 洗澡放大動畫
+            zContainer.style.transform = getTransformStr() + " scale(1.15)";
+            setTimeout(() => zContainer.style.transform = getTransformStr(), 300);
+        }
+        
+        updateLogic();
+        updateUI();
+    }
+
+    // 邏輯更新 (進化、死亡判定)
+    function updateLogic() {
+        // 進化階段判定
+        if (pet.age > 8 && pet.stage === "egg") {
+            pet.stage = "baby";
+            updateMsg("破殼而出！是一隻幼年小斑馬！");
+            document.getElementById('zebra-container').style.transform = getTransformStr();
+        }
+        if (pet.age > 35 && pet.stage === "baby") {
+            pet.stage = "adult";
+            
+            const rand = Math.random();
+            // 稀有度抽卡機率設定
+            if (rand < 0.02) { pet.form = "emperor"; pet.formName = "皇帝"; }        // 2% 最稀有
+            else if (rand < 0.08) { pet.form = "ocean"; pet.formName = "海洋"; }     // 6% 第二稀有
+            else if (rand < 0.15) { pet.form = "rainbow"; pet.formName = "彩虹"; }   // 7%
+            else if (rand < 0.22) { pet.form = "golden"; pet.formName = "黃金"; }    // 7%
+            else if (rand < 0.29) { pet.form = "zombie"; pet.formName = "殭屍"; }    // 7%
+            else if (rand < 0.36) { pet.form = "ghost"; pet.formName = "幽靈"; }     // 7%
+            else if (rand < 0.43) { pet.form = "alien"; pet.formName = "宇宙"; }     // 7%
+            else { pet.form = "normal"; pet.formName = "成年"; }                     // 57% 普通型態
+
+            if (pet.form === "normal") {
+                updateMsg("長大了！變成帥氣的成年斑馬！");
+            } else if (pet.form === "emperor") {
+                updateMsg("！！！天有異象！！！你養出了最稀有的【皇帝斑馬】！");
+            } else if (pet.form === "ocean") {
+                updateMsg("嘩啦啦🌊 突變成了極其稀有的【海洋斑馬】！");
+            } else {
+                updateMsg(`光芒閃耀✨ 突變成稀有的【${pet.formName}斑馬】！`);
+            }
+        }
+        if (pet.age > 80 && pet.stage === "adult" && pet.happy >= 90 && pet.hunger > 50 && pet.hunger <= 120) {
+            pet.stage = "king";
+            updateMsg("太神啦！進化成了傳說中的【斑馬王】！");
+        }
+
+        // 餓死或憂鬱死判定
+        if (pet.hunger <= 0 || pet.happy <= 0) {
+            die();
+        }
+    }
+
+    function die() {
+        pet.isDead = true;
+        document.getElementById('screen').className = 'bg-normal';
+        document.getElementById('screen').style.filter = "grayscale(100%) opacity(0.8)";
+        
+        const z = document.getElementById('zebra');
+        z.innerText = "👻";
+        z.classList.remove('king-glow');
+        
+        document.getElementById('zebra-container').style.transform = "scale(1)";
+        updateMsg("斑馬離開了非洲大草原... 點擊任意按鈕重新開始。");
+    }
+
+    // 取得當前體態變形參數
+    function getTransformStr() {
+        if (pet.stage === "egg") return "scale(1)";
+        
+        let transform = "scale(1)";
+        
+        // 年齡體型判定
+        if (pet.stage === "baby") transform = "scale(0.65)";
+        if (pet.stage === "adult") transform = "scale(1.1)";
+        if (pet.stage === "king") transform = "scale(1.4)"; // 王者特別大隻
+
+        // 過胖判定 (飽食度超過 120 就會變胖)
+        if (pet.hunger > 120 && pet.stage !== "egg") {
+            // 橫向拉長，縱向壓扁，營造肥胖感
+            transform += " scaleX(1.7) scaleY(0.85)"; 
+        }
+
+        return transform;
+    }
+
+    // 更新介面顯示
+    function updateUI() {
+        if (pet.isDead) return;
+        
+        // 數值
+        document.getElementById('hp').innerText = Math.max(0, pet.happy);
+        document.getElementById('hg').innerText = Math.max(0, pet.hunger);
+        
+        let displayName = "";
+        if (pet.stage === "egg") displayName = "斑馬蛋";
+        else if (pet.stage === "baby") displayName = "幼年斑馬";
+        else if (pet.stage === "adult") {
+            displayName = pet.form === "normal" ? "成年斑馬" : `${pet.formName}斑馬`;
+        }
+        else if (pet.stage === "king") {
+            displayName = pet.form === "normal" ? "👑 斑馬王" : `👑 ${pet.formName}斑馬王`;
+        }
+
+        // 過胖警告樣式
+        if (pet.hunger > 120 && pet.stage !== "egg") {
+            displayName += " (過胖🐷)";
+            document.getElementById('hg').style.color = "#d32f2f"; // 警告紅
+            document.getElementById('hg').style.fontWeight = "900";
+        } else {
+            document.getElementById('hg').style.color = "#222";
+            document.getElementById('hg').style.fontWeight = "bold";
+        }
+        
+        document.getElementById('lv').innerText = displayName;
+
+        const z = document.getElementById('zebra');
+        // 先清除所有特殊型態 Class
+        z.className = ''; 
+        z.style.filter = ''; // 新增：清除內聯濾鏡
+
+        if (pet.stage === "egg") {
+            z.innerText = "🥚";
+            if (pet.eggHue !== 0) z.style.filter = `hue-rotate(${pet.eggHue}deg) saturate(1.5)`;
+        } else {
+            z.innerText = "🦓";
+            
+            // 套用突變外觀
+            if (pet.form === "rainbow") z.classList.add('form-rainbow');
+            else if (pet.form === "golden") z.classList.add('form-golden');
+            else if (pet.form === "zombie") z.classList.add('form-zombie');
+            else if (pet.form === "ghost") z.classList.add('form-ghost');
+            else if (pet.form === "alien") z.classList.add('form-alien');
+            else if (pet.form === "ocean") z.classList.add('form-ocean');
+            else if (pet.form === "emperor") z.classList.add('form-emperor');
+
+            // 只有普通型態的斑馬王使用預設的黃金發光 (以免覆蓋突變特效)
+            if (pet.stage === "king" && pet.form === "normal") {
+                z.classList.add('king-glow');
+            }
+        }
+        
+        document.getElementById('zebra-container').style.transform = getTransformStr();
+    }
+
+    function updateMsg(text) {
+        document.getElementById('msg-box').innerText = text;
+    }
+
+    function resetGame() {
+        pet = {
+            hunger: 80,
+            happy: 80,
+            age: 0,
+            hasPoop: false,
+            isDead: false,
+            stage: "egg",
+            form: "normal",
+            formName: "",
+            bgTimeout: null,
+            eggHue: 0
+        };
+        document.getElementById('poop').style.display = "none";
+        document.getElementById('screen').style.filter = "none";
+        
+        clearInterval(gameInterval);
+        
+        // 顯示回培育室
+        const house = document.getElementById('warm-house');
+        house.style.display = 'flex';
+        setTimeout(() => { house.style.opacity = '1'; }, 50);
+        
+        updateUI();
+    }
+
+    function gameTick() {
+        if (pet.isDead) return;
+
+        // 隨時間消耗數值
+        pet.hunger -= 2;
+        pet.happy -= 1;
+        pet.age += 1;
+
+        // 隨機大便 (若場上沒大便，且不是蛋，且機率觸發)
+        if (Math.random() > 0.85 && !pet.hasPoop && pet.stage !== "egg") {
+            pet.hasPoop = true;
+            document.getElementById('poop').style.display = "block";
+            updateMsg("噗通！出現便便了，快用打掃清理！");
+        }
+
+        // 大便沒清會持續扣心情和飽食度 (生病感)
+        if (pet.hasPoop) {
+            pet.happy -= 3;
+            pet.hunger -= 1;
+        }
+
+        updateLogic();
+        updateUI();
+    }
+
+</script>
+
+</body>
+</html>
+
+```

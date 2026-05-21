@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海中圓頂 - 新手指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .poster-bg {
+            background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .step-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(244, 114, 182, 0.2);
+        }
+        /* 裝飾性漂浮圓圈 */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(244, 114, 182, 0.1);
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center items-center py-10 px-4">
+
+    <!-- 圖文海報主體 -->
+    <div class="poster-bg w-full max-w-4xl rounded-[3rem] shadow-2xl border-8 border-white p-8 md:p-12 z-10">
+        
+        <!-- 背景氣泡 -->
+        <div class="bubble w-32 h-32 top-10 left-10"></div>
+        <div class="bubble w-48 h-48 bottom-20 right-10"></div>
+        <div class="bubble w-20 h-20 top-1/2 left-4"></div>
+
+        <!-- 標題區 -->
+        <div class="relative z-10 text-center mb-12">
+            <div class="inline-block bg-slate-950 text-white text-5xl p-6 rounded-full mb-6 shadow-lg">
+                🏰
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4">海中圓頂 新手指南</h1>
+            <p class="text-slate-500 font-bold text-lg">掌握這 5 個步驟，輕鬆打造你的專屬海底王國！</p>
+        </div>
+
+        <!-- 步驟區 (時間軸設計) -->
+        <div class="relative z-10 space-y-8">
+
+            <!-- 步驟 1 -->
+            <div class="step-card bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-2 border-pink-50 relative">
+                <div class="w-20 h-20 shrink-0 bg-slate-950 text-white rounded-2xl flex items-center justify-center text-4xl shadow-md font-black">
+                    1
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
+                        <span>🎨</span> 召喚空投（創造居民）
+                    </h2>
+                    <p class="text-slate-600 font-bold leading-relaxed mb-3">
+                        一開始圓頂是空的！點擊「召喚空投」畫出你的第一位居民。
+                    </p>
+                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
+                        💡 提示：職業很重要！「建築師」能幫忙蓋房子，「村長」能提供資金。一開始強烈建議至少先畫一位「建築師」喔。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 2 -->
+            <div class="step-card bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-2 border-pink-50 relative">
+                <div class="w-20 h-20 shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-4xl shadow-md font-black">
+                    2
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
+                        <span>🏪</span> 報報商店（購買藍圖）
+                    </h2>
+                    <p class="text-slate-600 font-bold leading-relaxed mb-3">
+                        有了居民後，點擊「報報商店」，使用起始的夢想幣 (DC) 購買建築藍圖。
+                    </p>
+                    <div class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
+                        💡 提示：藍圖買一次就能無限次放置。越高級的藍圖，需要的「建築師人數」就越多。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 3 -->
+            <div class="step-card bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-2 border-pink-50 relative">
+                <div class="w-20 h-20 shrink-0 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center text-4xl shadow-md font-black">
+                    3
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
+                        <span>📐</span> 設計圓頂（規劃王國）
+                    </h2>
+                    <p class="text-slate-600 font-bold leading-relaxed mb-3">
+                        點擊「設計圓頂」，選擇你剛買好的藍圖，然後在左側的圓頂畫布上點擊，放置「施工地」。
+                    </p>
+                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
+                        💡 提示：此時建築還只是工地 (🚧)，必須依賴建築師在晚上進行施工才會慢慢蓋好。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 4 -->
+            <div class="step-card bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-2 border-pink-50 relative">
+                <div class="w-20 h-20 shrink-0 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-4xl shadow-md font-black">
+                    4
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
+                        <span>🌙</span> 進入結算（日夜交替）
+                    </h2>
+                    <p class="text-slate-600 font-bold leading-relaxed mb-3">
+                        白天你可以點擊左側居民使用技能。都忙完後，點擊最下方的「進入結算 (隔日)」。
+                    </p>
+                    <div class="bg-purple-50 text-purple-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
+                        💡 提示：結算時，建築師會自動去蓋房子。隔天早上你會看到工程進度增加，或者建築落成！
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 5 -->
+            <div class="step-card bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border-2 border-pink-50 relative">
+                <div class="w-20 h-20 shrink-0 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-4xl shadow-md font-black">
+                    5
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
+                        <span>🏠</span> 安排入住與賺錢
+                    </h2>
+                    <p class="text-slate-600 font-bold leading-relaxed mb-3">
+                        房子蓋好後，回到「設計圓頂」點擊該房屋，就能安排居民入住！
+                    </p>
+                    <div class="bg-yellow-50 text-yellow-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
+                        💡 提示：持續推進天數，觀察居民聊天收集物資，或是升級右側「王國科技」來增加你的每日被動收入吧！
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部結語 -->
+        <div class="mt-12 text-center relative z-10">
+            <p class="text-slate-400 font-bold text-sm">現在就回到遊戲，畫出你的第一位「建築師」吧！</p>
+        </div>
+
+    </div>
+</body>
+</html>

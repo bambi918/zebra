@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海中圓頂 夢想生活</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fffafa;
+            color: #0f172a; /* Slate 950 - 優雅深藍 */
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        .sakura-petal {
+            position: fixed; top: -10%; user-select: none; pointer-events: none; z-index: 50; animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 0; }
+            50% { opacity: 0.8; transform: translateY(50vh) rotate(180deg) translateX(20px); }
+            100% { transform: translateY(110vh) rotate(360deg) translateX(-20px); opacity: 0; }
+        }
+        .paw-print { position: absolute; opacity: 0.08; z-index: 0; pointer-events: none; color: #f9a8d4; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; border: 2px solid #fff; }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            background: white;
+            border: 8px solid #f1f5f9;
+            border-radius: 3rem;
+            position: relative;
+            touch-action: none;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+        }
+        canvas { width: 100% !important; height: 100% !important; cursor: crosshair; border-radius: 2.5rem; }
+        .tool-btn {
+            width: 60px; height: 60px; border-radius: 1.25rem; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; font-size: 1.75rem; background: #f8fafc; border: 2px solid #f1f5f9;
+        }
+        .tool-btn.active { background: #0f172a; color: white; border-color: #0f172a; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); transform: translateY(-2px); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* 設計圓頂專用樣式 - 白色系 */
+        .dome-area {
+            background: radial-gradient(circle, #ffffff 0%, #f8fafc 70%, #e2e8f0 100%);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.05);
+            cursor: crosshair;
+        }
+        .building-item {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            pointer-events: auto; /* 確保建築可點擊 */
+        }
+        .building-item:hover { z-index: 10; transform: translate(-50%, -50%) scale(1.05); }
+        .blueprint-btn.selected { border-color: #f472b6; background: #fdf2f8; transform: scale(1.05); }
+    </style>
+</head>
+<body class="min-h-screen relative">
+    <audio id="bgm" loop src="data:audio/mp3;base64,這裡是Base64完整放置的地方"></audio>
+    <div id="paw-bg"></div>
+
+    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8 relative z-20">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 bg-white/95 backdrop-blur-md p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-pink-100">
+            <div class="flex items-center gap-8">
+                <div class="bg-slate-950 p-5 rounded-[2rem] text-white text-4xl shadow-lg shadow-slate-200">🏰</div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-950 mb-2 tracking-tighter">海中圓頂 夢想生活</h1>
+                    <div class="text-slate-500 font-bold flex flex-wrap items-center gap-4 text-sm">
+                        <span class="text-pink-500 font-black px-3 py-1 bg-pink-50 rounded-full">第 <span id="day-count">1</span> 天</span>
+                        <span id="pop-status" class="text-slate-950 font-black">人口: 0/5</span>
+                        <button onclick="toggleMusic()" id="music-btn" class="flex items-center gap-2 text-slate-400 hover:text-pink-500 transition-colors">
+                            <span id="music-icon">🔇</span> 音樂: 關閉
+                        </button>
+                        <input type="file" id="music-upload" accept="audio/*,video/mp4" class="hidden" onchange="handleMusicUpload(event)">
+                        <button onclick="document.getElementById('music-upload').click()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
+                            📁 載入專屬音樂
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mt-8 md:mt-0 justify-center">
+                <div class="bg-slate-50 px-6 py-4 rounded-[2rem] border border-slate-100 shadow-inner">
+                    <span class="text-slate-950 font-black text-xl md:text-3xl tracking-tighter">💎 <span id="dream-coins">1000</span></span>
+                </div>
+                <button onclick="openNews()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-6 py-4 rounded-full shadow-lg transition-all active:scale-95 font-black text-base border border-indigo-200">
+                    ✨ 圓頂日報
+                </button>
+                <button onclick="openDome()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-6 py-4 rounded-full shadow-lg transition-all active:scale-95 font-black text-base border border-blue-200">
+                    📐 設計圓頂
+                </button>
+                <button onclick="openShop()" class="bg-pink-50 hover:bg-pink-100 text-pink-600 px-6 py-4 rounded-full shadow-lg transition-all active:scale-95 font-black text-base border border-pink-200">
+                    🏪 報報商店
+                </button>
+                <button onclick="openMashaShop()" class="bg-amber-50 hover:bg-amber-100 text-amber-600 px-6 py-4 rounded-full shadow-lg transition-all active:scale-95 font-black text-base border border-amber-200">
+                    🎀 瑪瑪天地
+                </button>
+                <button onclick="openAirdrop()" class="bg-slate-950 hover:bg-slate-800 text-white px-8 py-4 rounded-full shadow-2xl transition-all active:scale-95 font-black text-base">
+                    召喚空投
+                </button>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <aside class="space-y-8">
+                <div class="bg-white/90 p-10 rounded-[3rem] shadow-lg border border-pink-50">
+                    <h2 class="text-xs font-black text-slate-400 mb-8 flex items-center gap-2 uppercase tracking-[0.2em]">📦 圓頂倉庫</h2>
+                    <div id="inventory-list" class="space-y-4 min-h-[100px] text-sm">
+                        <p class="italic text-slate-300">目前沒有物資...</p>
+                    </div>
+                    <button onclick="sellAll()" class="w-full mt-8 bg-slate-950 text-white py-5 rounded-2xl font-black hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                        出售所有物資
+                    </button>
+                </div>
+
+                <div class="bg-white/90 p-10 rounded-[3rem] shadow-lg border border-pink-50">
+                    <h2 class="text-xs font-black text-slate-400 mb-8 uppercase tracking-[0.2em]">🌳 王國科技</h2>
+                    <div id="tech-tree" class="space-y-5">
+                        <!-- 由 JS 動態注入 -->
+                    </div>
+                </div>
+            </aside>
+
+            <section class="lg:col-span-2 space-y-8">
+                <div id="skill-section" class="bg-pink-50 p-8 rounded-[3rem] border border-pink-100 hidden">
+                    <h3 class="text-xs font-black text-pink-600 mb-6 uppercase tracking-widest flex items-center gap-2">✨ 今日可用技能</h3>
+                    <div id="available-skills" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <div class="bg-white/95 p-8 md:p-12 rounded-[4rem] shadow-2xl border border-pink-50 flex flex-col h-[700px]">
+                    <h2 class="text-2xl font-black text-slate-950 mb-8 flex items-center gap-3">
+                        <span class="text-pink-500">💬</span> 圓頂頻道
+                    </h2>
+                    <div id="chat-container" class="flex-1 overflow-y-auto custom-scrollbar space-y-8 pr-4">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-40">
+                            <span class="text-8xl mb-6">🏠</span>
+                            <p class="font-black italic text-lg text-center">歡迎進入圓頂生活。<br>點擊「召喚空投」來畫出第一位居民。</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 pt-8 border-t border-slate-100">
+                        <button onclick="endDay()" class="w-full bg-slate-950 hover:bg-slate-800 text-white py-6 rounded-full font-black shadow-2xl transition-all active:scale-95 text-xl">
+                            進入結算 (隔日)
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ✨ 圓頂日報 Modal -->
+    <div id="news-modal" class="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl border-[4px] border-indigo-100 relative overflow-hidden">
+            <button onclick="closeNews()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
+            <h2 class="text-3xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                <span class="text-4xl">📰</span> 圓頂日報 <span class="text-sm font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">由 AI 記者採訪</span>
+            </h2>
+            <div id="news-content" class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 min-h-[150px] font-bold text-slate-700 text-lg">
+                <!-- AI 生成的新聞內容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 設計圓頂 Modal -->
+    <div id="dome-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full h-full md:h-auto md:max-h-[95vh] md:max-w-6xl md:rounded-[4.5rem] shadow-2xl flex flex-col lg:flex-row overflow-hidden border-[12px] border-white relative">
+            <button onclick="closeDome()" class="absolute top-6 right-6 w-12 h-12 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-50">✕</button>
+            
+            <!-- 圓頂視圖區 (包含道路畫布與建築層) -->
+            <div class="lg:flex-1 bg-slate-50/50 p-6 md:p-12 flex flex-col items-center justify-center border-r border-slate-100 overflow-y-auto min-h-[500px]">
+                <h3 class="text-2xl font-black text-slate-950 mb-6 flex items-center gap-2">📐 你的海中圓頂</h3>
+                <div class="w-full max-w-lg aspect-square relative">
+                    <div class="dome-area w-full h-full rounded-full relative border-8 border-white shadow-2xl overflow-hidden" id="dome-area-container">
+                        <!-- 道路畫布層 (位於建築下方) -->
+                        <canvas id="road-canvas" width="1000" height="1000" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></canvas>
+                        <!-- 建築放置層 (指標穿透，但建築物本身可點擊) -->
+                        <div id="dome-buildings-container" class="absolute inset-0 w-full h-full z-10 pointer-events-none">
+                            <!-- JS 動態產生建築 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 藍圖列表區 -->
+            <div class="w-full lg:w-[400px] bg-white flex flex-col overflow-y-auto custom-scrollbar p-8 md:p-12 border-t lg:border-t-0">
+                <div class="mb-8">
+                    <h4 class="text-xl font-black text-slate-900 mb-2">已擁有的藍圖</h4>
+                    <p class="text-xs text-slate-500 font-bold">選擇藍圖並在左側點擊放置（步道可直接畫線）。點擊完工房屋可進行裝潢或入住！</p>
+                </div>
+                
+                <div class="space-y-4 flex-1" id="owned-blueprints-container">
+                    <!-- JS 動態產生已購買的藍圖 -->
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-slate-100">
+                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs font-black text-blue-600 mb-1">👷 目前的建築團隊</p>
+                            <p class="text-sm font-bold text-slate-700" id="architect-status">建築師人數: 0</p>
+                        </div>
+                    </div>
+                    <button onclick="clearRoads()" class="mt-4 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 px-4 py-3 rounded-xl font-bold w-full transition-colors flex justify-center items-center gap-2">
+                        🧽 清除所有已繪製的道路
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 裝潢 Modal -->
+    <div id="decorate-modal" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl border-4 border-amber-100 relative">
+            <button onclick="closeDecorateModal()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
+            <h3 class="text-2xl font-black text-slate-900 mb-2 text-center">房屋裝潢</h3>
+            <p class="text-sm font-bold text-slate-500 mb-6 text-center">必須由「室內設計師」來進行裝潢，居民才能入住喔！</p>
+            <div id="decorate-designer-status" class="mb-4 text-center text-sm font-black"></div>
+            <div id="decorate-list" class="space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                <!-- JS 動態產生裝潢列表 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 安排入住 Modal -->
+    <div id="assign-modal" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl border-4 border-pink-100 relative">
+            <button onclick="closeAssignModal()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
+            <h3 class="text-2xl font-black text-slate-900 mb-2 text-center">安排入住</h3>
+            <p class="text-sm font-bold text-slate-500 mb-6 text-center">這棟房子已經裝潢得很漂亮了！請選擇居民搬進來吧</p>
+            <div id="assign-list" class="space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                <!-- JS 動態產生居民列表 -->
+            </div>
+            <button onclick="unassignResident()" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-600 py-4 rounded-xl font-bold transition-all">
+                讓房子空著 (移除住客)
+            </button>
+        </div>
+    </div>
+
+    <!-- 報報商店 Modal -->
+    <div id="shop-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-4xl rounded-[4rem] p-8 md:p-12 shadow-2xl border-[8px] border-pink-50 relative overflow-hidden">
+            <button onclick="closeShop()" class="absolute top-8 right-8 w-12 h-12 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
+            <div class="text-center mb-10 relative z-0">
+                <h2 class="text-3xl md:text-4xl font-black text-slate-950 mb-4 flex items-center justify-center gap-3">
+                    <span class="text-5xl">🏪</span> 報報商店
+                </h2>
+                <div class="inline-flex flex-col items-center">
+                    <p class="text-slate-600 font-bold text-sm bg-pink-50 border border-pink-100 px-6 py-3 rounded-full mb-1">
+                        店長 boss：「歡迎光臨！來看看最新進貨的藍圖吧！」
+                    </p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2" id="shop-items-container">
+                <!-- JS 動態產生商店商品 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 瑪瑪天地 Modal -->
+    <div id="masha-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-4xl rounded-[4rem] p-8 md:p-12 shadow-2xl border-[8px] border-amber-50 relative overflow-hidden">
+            <button onclick="closeMashaShop()" class="absolute top-8 right-8 w-12 h-12 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
+            <div class="text-center mb-10 relative z-0">
+                <h2 class="text-3xl md:text-4xl font-black text-slate-950 mb-4 flex items-center justify-center gap-3">
+                    <span class="text-5xl">🎀</span> 瑪瑪天地
+                </h2>
+                <div class="inline-flex flex-col items-center">
+                    <p class="text-slate-600 font-bold text-sm bg-amber-50 border border-amber-100 px-6 py-3 rounded-full mb-1">
+                        老闆娘 瑪莎：「喵嗚！快來買最潮的裝潢風格，讓房子變得超可愛！」
+                    </p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2" id="masha-items-container">
+                <!-- JS 動態產生瑪瑪天地商品 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 讀檔與開局選擇 Modal -->
+    <div id="start-modal" class="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4">
+        <div class="bg-white rounded-[4rem] p-12 shadow-2xl max-w-md w-full text-center border border-pink-50">
+            <div class="text-6xl mb-6">🏰</div>
+            <h2 class="text-3xl font-black text-slate-950 mb-2">歡迎回到海中圓頂</h2>
+            <p class="text-slate-500 font-bold mb-8 text-sm">我們發現了您之前的圓頂紀錄，請問要繼續嗎？</p>
+            
+            <div class="bg-slate-50 p-6 rounded-[2rem] mb-8 border border-slate-100">
+                <p id="save-info" class="text-pink-500 font-black text-lg">讀取紀錄中...</p>
+            </div>
+
+            <div class="space-y-4">
+                <button onclick="loadSavedGame()" class="w-full bg-slate-950 text-white py-5 rounded-full font-black shadow-xl hover:bg-slate-800 transition-all active:scale-95 text-lg">
+                    🌊 繼續夢想 (讀取存檔)
+                </button>
+                <button onclick="startNewGame(true)" class="w-full bg-pink-50 text-pink-600 py-5 rounded-full font-black shadow-sm hover:bg-pink-100 transition-all active:scale-95 text-lg">
+                    ✨ 重新開始 (覆蓋舊檔)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 召喚空投 Modal -->
+    <div id="airdrop-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 backdrop-blur-md hidden p-0 md:p-8">
+        <div class="bg-white w-full h-full md:h-auto md:max-h-[92vh] md:max-w-6xl md:rounded-[4.5rem] shadow-2xl flex flex-col lg:flex-row overflow-hidden border-[12px] border-white">
+            
+            <div class="lg:flex-1 bg-slate-50/50 p-8 md:p-12 flex flex-col items-center justify-center border-r border-slate-100 overflow-y-auto min-h-[550px]">
+                <h3 class="text-2xl font-black text-slate-950 mb-8">畫出你的夢想居民</h3>
+                <div class="canvas-container shadow-2xl mb-10">
+                    <canvas id="drawing-canvas" width="500" height="500"></canvas>
+                </div>
+                <div class="flex flex-wrap justify-center gap-5 bg-white/80 backdrop-blur p-6 rounded-[2.5rem] shadow-xl border border-slate-200 mb-6">
+                    <button onclick="setTool('pencil')" id="tool-pencil" class="tool-btn active">✏️</button>
+                    <button onclick="setTool('eraser')" id="tool-eraser" class="tool-btn">🧽</button>
+                    <button onclick="setTool('bucket')" id="tool-bucket" class="tool-btn">🪣</button>
+                    <div class="w-px h-12 bg-slate-100 mx-2"></div>
+                    <input type="color" id="color-picker" value="#0f172a" class="w-16 h-16 border-none bg-transparent cursor-pointer rounded-full overflow-hidden shadow-inner">
+                    <button onclick="clearCanvas()" class="px-8 text-slate-400 font-black text-xs uppercase hover:text-slate-950 transition-colors tracking-widest">全部清空</button>
+                </div>
+            </div>
+            
+            <div class="w-full lg:w-[450px] bg-white flex flex-col overflow-y-auto custom-scrollbar p-10 md:p-14 border-t lg:border-t-0">
+                <div class="space-y-6 flex-1">
+                    <div class="bg-pink-50 p-6 rounded-[2.5rem] border border-pink-100 text-slate-900">
+                        <h4 class="text-pink-600 font-black text-sm mb-2 italic">居民手記</h4>
+                        <p id="res-backstory" class="text-xs text-slate-600 font-bold leading-relaxed">你的每一筆每一劃，都是生命的溫度。名字與職業將決定他們如何在這片櫻花海中生活。</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">居民姓名</label>
+                        <input type="text" id="res-name" placeholder="輸入名字..." class="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-pink-100 font-black text-slate-950 text-lg transition-all">
+                    </div>
+
+                    <!-- AI 鑑定功能已移除 -->
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">職業專長</label>
+                        <select id="res-job" class="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-pink-100 font-black text-slate-950 text-base appearance-none cursor-pointer">
+                            <!-- JS 會動態更新此處 -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">性格傾向</label>
+                        <select id="res-personality" class="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-pink-100 font-black text-slate-950 text-base appearance-none cursor-pointer">
+                            <option value="樂觀">貓咪般的樂觀</option>
+                            <option value="高冷">深海魚的高冷</option>
+                            <option value="溫柔">氣泡般的溫柔</option>
+                            <option value="古怪">海葵般的古怪</option>
+                            <option value="豪爽">大浪般的豪爽</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-8 mt-8 border-t border-slate-50">
+                    <button onclick="confirmResident()" class="w-full bg-slate-950 hover:bg-slate-800 text-white py-6 rounded-full font-black shadow-2xl transition-all active:scale-95 text-2xl tracking-tighter">
+                        確認並邀請
+                    </button>
+                    <button onclick="closeAirdrop()" class="w-full mt-4 text-slate-300 text-sm font-bold hover:text-slate-500 transition-colors">暫時返回</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結算 Modal -->
+    <div id="night-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-2xl hidden p-6">
+        <div class="bg-white w-full max-w-lg rounded-[4rem] p-12 text-center space-y-12 border border-pink-50 shadow-2xl">
+            <div class="text-8xl animate-bounce">🌙</div>
+            <div>
+                <h2 class="text-4xl font-black text-slate-950 uppercase tracking-tighter mb-4">深海黃昏</h2>
+                <p class="text-slate-400 font-bold text-base">夜晚來臨了，你要為圓頂做什麼準備？</p>
+            </div>
+            <div class="space-y-5">
+                <button onclick="nightAction('party')" class="w-full py-6 bg-pink-500 text-white rounded-3xl font-black hover:bg-pink-600 transition-all shadow-xl text-xl hover:scale-105">
+                    舉行櫻花派對 (提升感情)
+                </button>
+                <button onclick="nightAction('work')" class="w-full py-6 bg-slate-950 text-white rounded-3xl font-black hover:bg-slate-800 transition-all shadow-xl text-xl hover:scale-105">
+                    通宵加強圓頂 (+200 DC)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示訊息 Modal -->
+    <div id="msg-modal" class="fixed inset-0 z-[400] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm hidden p-4">
+        <div class="bg-white rounded-[2rem] p-8 shadow-2xl max-w-sm w-full text-center">
+            <p id="msg-text" class="text-slate-800 font-bold mb-6 text-lg whitespace-pre-line"></p>
+            <button onclick="closeMessage()" class="bg-pink-500 text-white px-8 py-3 rounded-full font-black hover:bg-pink-600 transition-all">確定</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const apiKey = ""; 
+
+        // 帶有重試機制與錯誤處理的 API 呼叫函數
+        async function fetchWithRetry(url, payload, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return await res.json();
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    await new Promise(r => setTimeout(r, delays[i]));
+                }
+            }
+        }
+
+        // 雲端存檔初始化設定
+        let db, auth, userId;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        try {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            if (firebaseConfig) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("登入失敗：", error);
+                    }
+                };
+
+                initAuth();
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        await checkSave(); 
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn("雲端環境尚未準備好，目前使用單機模式。", error);
+        }
+
+        let tempSaveData = null;
+
+        async function checkSave() {
+            if (!userId || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists() && docSnap.data().saveData) {
+                    tempSaveData = JSON.parse(docSnap.data().saveData);
+                    document.getElementById('save-info').innerText = `紀錄：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
+                    document.getElementById('start-modal').classList.remove('hidden');
+                } else {
+                    startNewGame(false);
+                }
+            } catch (e) {
+                console.error("檢查存檔失敗：", e);
+                startNewGame(false);
+            }
+        }
+
+        // 專門用來繪製直線道路的函數
+        function redrawRoads(tempLine = null) {
+            const rc = document.getElementById('road-canvas');
+            if(!rc) return;
+            const ctx = rc.getContext('2d');
+            ctx.clearRect(0, 0, rc.width, rc.height);
+
+            // 為了相容超早期的舊存檔（如果有的話）
+            if (gameState.roadData && (!gameState.roadLines || gameState.roadLines.length === 0)) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = gameState.roadData;
+            }
+
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (gameState.roadLines) {
+                gameState.roadLines.forEach(line => {
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1);
+                    ctx.lineTo(line.x2, line.y2);
+                    ctx.stroke();
+                });
+            }
+
+            if (tempLine) {
+                ctx.beginPath();
+                ctx.moveTo(tempLine.x1, tempLine.y1);
+                ctx.lineTo(tempLine.x2, tempLine.y2);
+                ctx.stroke();
+            }
+        }
+
+        function loadSavedGame() {
+            if (tempSaveData) {
+                if (!tempSaveData.blueprints) tempSaveData.blueprints = [];
+                if (tempSaveData.bossJoined === undefined) tempSaveData.bossJoined = tempSaveData.baoxiJoined || false; 
+                if (tempSaveData.mashaJoined === undefined) tempSaveData.mashaJoined = false;
+                if (!tempSaveData.buildings) tempSaveData.buildings = [];
+                if (!tempSaveData.decorations) tempSaveData.decorations = {};
+                if (!tempSaveData.roadLines) tempSaveData.roadLines = []; 
+                
+                tempSaveData.buildings = tempSaveData.buildings.filter(b => b.bpId !== 'bp_road');
+
+                tempSaveData.buildings.forEach(b => {
+                    if (b.resident && !b.decoration) {
+                        b.decoration = '經典風裝潢';
+                    }
+                });
+
+                gameState = { ...gameState, ...tempSaveData };
+                document.getElementById('start-modal').classList.add('hidden');
+                
+                redrawRoads();
+                updateUI();
+
+                if (gameState.residents.length > 0) {
+                    document.getElementById('chat-container').innerHTML = '';
+                    addChatMessage("系統", `成功從雲端載入圓頂進度！目前第 ${gameState.day} 天。`, "system");
+                }
+            }
+        }
+
+        function startNewGame(overwrite = true) {
+            document.getElementById('start-modal').classList.add('hidden');
+            if (overwrite) {
+                saveGame(); 
+                document.getElementById('chat-container').innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-300 opacity-40">
+                        <span class="text-8xl mb-6">🏠</span>
+                        <p class="font-black italic text-lg text-center">歡迎進入圓頂生活。<br>點擊「召喚空投」來畫出第一位居民。</p>
+                    </div>
+                `;
+            }
+            updateUI();
+        }
+
+        async function saveGame() {
+            if (!userId || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
+                await setDoc(docRef, {
+                    saveData: JSON.stringify(gameState)
+                });
+                console.log("遊戲進度已完整儲存到雲端！");
+            } catch (error) {
+                console.error("儲存進度失敗：", error);
+            }
+        }
+
+        let gameState = {
+            day: 1,
+            coins: 1000,
+            residents: [],
+            popLimit: 5,
+            inventory: {},
+            usedSkillToday: false,
+            techs: [
+                { id: 'tourism', name: '櫻花咖啡廳', lv: 0, cost: 300, desc: '每日被動獲得 150 DC' },
+                { id: 'garden', name: '肉球溫室', lv: 0, cost: 500, desc: '提升居民送禮機率' },
+                { id: 'space', name: '圓頂擴張工程', lv: 0, cost: 1000, desc: '額外增加 5 人上限' }
+            ],
+            blueprints: [], 
+            buildings: [], 
+            decorations: {}, 
+            roadLines: [], 
+            roadData: null,  
+            bossJoined: false,
+            mashaJoined: false 
+        };
+
+        // 房屋大小統一調大 25% (數值放大 1.25 倍)
+        const shopItemsData = [
+            { id: 'bp_road', type: 'blueprint', name: '小步道藍圖', price: 10, icon: '🛤️', desc: '解鎖步道鋪設功能。選擇後在圓頂內滑動，自動畫出筆直水平或垂直的街道。', minArch: 0, points: 0, size: 8, livable: false, isCommercial: false },
+            { id: 'bp_basic', type: 'blueprint', name: '溫馨小屋藍圖', price: 500, icon: '🏠', desc: '基礎居住單位。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 2, size: 15, livable: true, isCommercial: false },
+            { id: 'bp_villa', type: 'blueprint', name: '豪華別墅藍圖', price: 1500, icon: '🏡', desc: '帶有小花園的高級住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 6, size: 23, livable: true, isCommercial: false },
+            { id: 'bp_house_jp', type: 'blueprint', name: '日式和風大宅', price: 2000, icon: '⛩️', desc: '充滿寧靜氛圍的和風住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 25, livable: true, isCommercial: false },
+            { id: 'bp_house_mushroom', type: 'blueprint', name: '深海蘑菇屋', price: 1200, icon: '🍄', desc: '造型可愛的童話房屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 4, size: 18, livable: true, isCommercial: false },
+            { id: 'bp_house_glass', type: 'blueprint', name: '現代晶透玻璃屋', price: 2500, icon: '🧊', desc: '能盡情欣賞海景的現代建築。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 10, size: 23, livable: true, isCommercial: false },
+            
+            { id: 'bp_modern_pool', type: 'blueprint', name: '現代泳池別墅', price: 3200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="55" y="70" width="40" height="20" fill="#7dd3fc" stroke="#38bdf8" stroke-width="2" rx="4"/><path d="M 60 80 Q 65 75 70 80 T 80 80 T 90 80" fill="none" stroke="#fff" stroke-width="2" opacity="0.6"/><rect x="5" y="50" width="60" height="40" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="10" y="55" width="20" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="55" width="25" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="20" y1="55" x2="20" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="47" y1="55" x2="47" y2="90" stroke="#cbd5e1" stroke-width="1"/><rect x="20" y="15" width="45" height="35" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="20" width="35" height="30" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="36" y1="20" x2="36" y2="50" stroke="#cbd5e1" stroke-width="1"/><line x1="48" y1="20" x2="48" y2="50" stroke="#cbd5e1" stroke-width="1"/><rect x="5" y="45" width="15" height="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/><rect x="5" y="30" width="15" height="15" fill="#bae6fd" opacity="0.5" stroke="#94a3b8" stroke-width="1"/><rect x="18" y="12" width="50" height="3" fill="#64748b"/><rect x="3" y="47" width="64" height="3" fill="#64748b"/></svg>', desc: '擁有私人無邊際泳池的現代別墅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: true, isCommercial: false },
+            { id: 'bp_modern_minimalist', type: 'blueprint', name: '現代極簡微型屋', price: 1000, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="25" y="40" width="50" height="50" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="20" y="30" width="60" height="10" fill="#64748b" stroke="#475569" stroke-width="2"/><rect x="35" y="50" width="30" height="40" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="50" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="35" y1="70" x2="65" y2="70" stroke="#cbd5e1" stroke-width="1"/><line x1="15" y1="90" x2="85" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '幾何線條構成的極簡風格微型屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 5, size: 18, livable: true, isCommercial: false },
+            { id: 'bp_modern_sky_garden', type: 'blueprint', name: '現代空中花園宅', price: 4200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="30" y="15" width="40" height="75" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="40" width="50" height="15" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><path d="M 25 55 Q 30 65 35 55 T 45 55 T 55 55 T 65 55 T 75 55" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><rect x="35" y="20" width="30" height="20" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="65" width="30" height="25" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="65" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><path d="M 30 15 Q 40 5 50 15 T 70 15" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><line x1="20" y1="90" x2="80" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '結合垂直綠化的現代建築。裝潢後可入住。需 4 名建築師。', minArch: 4, points: 18, size: 30, livable: true, isCommercial: false },
+            { id: 'bp_modern_smart', type: 'blueprint', name: '現代科技智慧宅', price: 3800, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><path d="M 15 90 L 15 50 L 50 30 L 85 50 L 85 90 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/><polygon points="15,50 50,30 85,50 50,65" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="40" y="70" width="20" height="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/><circle cx="50" cy="80" r="3" fill="#38bdf8"/><rect x="25" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><rect x="60" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><line x1="5" y1="90" x2="95" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '全自動化的高科技現代宅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 15, size: 25, livable: true, isCommercial: false },
+            { id: 'bp_modern_loft', type: 'blueprint', name: '現代挑高工業風', price: 2200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="20" y="20" width="60" height="70" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="25" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><rect x="55" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><line x1="25" y1="55" x2="45" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="55" y1="55" x2="75" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="35" y1="30" x2="35" y2="80" stroke="#94a3b8" stroke-width="2"/><line x1="65" y1="30" x2="65" y2="80" stroke="#94a3b8" stroke-width="2"/><rect x="15" y="10" width="70" height="10" fill="#334155"/><line x1="10" y1="90" x2="90" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '大面落地窗的工業風現代公寓。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 23, livable: true, isCommercial: false },
+
+            { id: 'bp_hotel', type: 'blueprint', name: '海景飯店藍圖', price: 3500, icon: '🏨', desc: '十分氣派的飯店。裝潢後可入住，每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 28, livable: true, isCommercial: true, minIncome: 200, maxIncome: 1500 },
+            { id: 'bp_aquarium', type: 'blueprint', name: '深海水族館藍圖', price: 4000, icon: '🐠', desc: '展示海洋奇觀的水族館。每天產生營收。需 4 名建築師。', minArch: 4, points: 20, size: 35, livable: false, isCommercial: true, minIncome: 200, maxIncome: 1500 },
+            { id: 'bp_amusement', type: 'blueprint', name: '夢想遊樂園藍圖', price: 5000, icon: '🎡', desc: '充滿歡笑的大型遊樂園。每天產生營收。需 5 名建築師。', minArch: 5, points: 30, size: 44, livable: false, isCommercial: true, minIncome: 500, maxIncome: 2000 },
+            { id: 'bp_restaurant', type: 'blueprint', name: '海帶餐廳藍圖', price: 1200, icon: '🍱', desc: '提供美味海鮮的餐廳。每天產生營收。需 2 名建築師。', minArch: 2, points: 5, size: 19, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_cafe', type: 'blueprint', name: '櫻花貓咪咖啡廳', price: 1800, icon: '☕', desc: '適合喝下午茶的地方。每天產生營收。需 2 名建築師。', minArch: 2, points: 7, size: 20, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_farm', type: 'blueprint', name: '貓草農場藍圖', price: 800, icon: '🌱', desc: '種植新鮮貓草的農田。每天產生營收。需 1 名建築師。', minArch: 1, points: 4, size: 23, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_hotspring', type: 'blueprint', name: '海底溫泉藍圖', price: 3800, icon: '♨️', desc: '療癒身心的溫泉會館。每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 30, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_cinema', type: 'blueprint', name: '深海電影院藍圖', price: 2800, icon: '🎬', desc: '播放著經典電影的影城。每天產生營收。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_library', type: 'blueprint', name: '珊瑚圖書館藍圖', price: 2500, icon: '📚', desc: '充滿海洋智慧的公共圖書館。需 2 名建築師。', minArch: 2, points: 8, size: 25, livable: false, isCommercial: false },
+            { id: 'bp_hospital', type: 'blueprint', name: '海星醫院藍圖', price: 3000, icon: '🏥', desc: '保障居民健康的公共醫院。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: false, isCommercial: false },
+            { id: 'bp_park', type: 'blueprint', name: '櫻花公園藍圖', price: 2000, icon: '⛲', desc: '讓居民散步放鬆的好去處。需 3 名建築師。', minArch: 3, points: 10, size: 31, livable: false, isCommercial: false },
+            { id: 'invite_boss', type: 'character', name: '邀請店長「boss」', price: 1500, icon: '🎀', desc: '讓商店老闆親自成為圓頂的一員！' }
+        ];
+
+        const mashaItemsData = [
+            { id: 'dec_esports', name: '電競風裝潢', price: 350, icon: '🎮', desc: '充滿霓虹燈與頂級設備的超酷空間。' },
+            { id: 'dec_modern', name: '現代風裝潢', price: 350, icon: '🛋️', desc: '時尚俐落的現代生活品味。' },
+            { id: 'dec_minimalist', name: '極簡風裝潢', price: 350, icon: '🔳', desc: '去除多餘雜物的極致簡約風格。' },
+            { id: 'dec_aquarium', name: '水族館風裝潢', price: 350, icon: '🐠', desc: '四周被海水與魚群環繞的夢幻感。' },
+            { id: 'dec_nature', name: '自然風裝潢', price: 350, icon: '🌿', desc: '滿滿的植物與木質調，彷彿住在森林。' },
+            { id: 'dec_magic', name: '魔法風裝潢', price: 350, icon: '🔮', desc: '會自動飄浮的書本與神祕的魔法陣。' },
+            { id: 'dec_starry', name: '星空風裝潢', price: 350, icon: '🌌', desc: '天花板就是浩瀚的宇宙星河。' },
+            { id: 'dec_sakura', name: '櫻花風裝潢', price: 350, icon: '🌸', desc: '室內也會下起浪漫的櫻花雨。' },
+            { id: 'dec_industrial', name: '工業風裝潢', price: 350, icon: '🧱', desc: '管線外露與水泥牆面的粗獷美學。' },
+            { id: 'dec_retro', name: '復古風裝潢', price: 350, icon: '📻', desc: '懷舊的黑膠唱片機與老式家具。' },
+            { id: 'invite_masha', name: '邀請老闆娘「瑪莎」', price: 1500, icon: '🎀', desc: '讓非常活潑的屁貓瑪莎成為居民！' }
+        ];
+
+        let canvas, ctx, tool = 'pencil', isDrawing = false;
+        let musicOn = false;
+        let bgmUrl = "";
+        let selectedBlueprintToBuild = null; 
+        let currentBuildingIdForAssign = null; 
+        let currentBuildingIdForDecorate = null; 
+
+        function showMessage(msg) {
+            document.getElementById('msg-text').innerText = msg;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+        function closeMessage() {
+            document.getElementById('msg-modal').classList.add('hidden');
+        }
+
+        function handleMusicUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (bgmUrl) {
+                    URL.revokeObjectURL(bgmUrl);
+                }
+                bgmUrl = URL.createObjectURL(file);
+                const bgm = document.getElementById('bgm');
+                bgm.src = bgmUrl;
+                
+                bgm.play().then(() => {
+                    musicOn = true;
+                    document.getElementById('music-icon').innerText = "🔊";
+                    document.getElementById('music-btn').classList.add('text-pink-500');
+                    showMessage("專屬音樂載入成功並開始播放！");
+                }).catch(err => {
+                    console.error("自動播放被瀏覽器阻擋:", err);
+                    showMessage("專屬音樂載入成功！請點擊「音樂: 關閉」按鈕來開始播放。");
+                });
+            }
+        }
+
+        function toggleMusic() {
+            const bgm = document.getElementById('bgm');
+            
+            if (!bgm.src || bgm.src.endsWith(window.location.pathname)) {
+                showMessage("請先點擊「載入專屬音樂」按鈕，選擇您的音樂檔案！");
+                return;
+            }
+
+            if (!musicOn) {
+                bgm.play();
+                musicOn = true;
+                document.getElementById('music-icon').innerText = "🔊";
+                document.getElementById('music-btn').classList.add('text-pink-500');
+            } else {
+                bgm.pause();
+                musicOn = false;
+                document.getElementById('music-icon').innerText = "🔇";
+                document.getElementById('music-btn').classList.remove('text-pink-500');
+            }
+        }
+
+        function initCanvas() {
+            canvas = document.getElementById('drawing-canvas');
+            if(!canvas) return;
+            ctx = canvas.getContext('2d');
+            
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            };
+
+            const handleStart = (e) => {
+                const pos = getPos(e);
+                if (tool === 'bucket') { floodFill(pos.x, pos.y); return; }
+                isDrawing = true;
+                ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+                if(e.touches) e.preventDefault();
+            };
+
+            const handleMove = (e) => {
+                if (!isDrawing || tool === 'bucket') return;
+                const pos = getPos(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                if (tool === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; }
+                else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = document.getElementById('color-picker').value; }
+                ctx.stroke();
+                if(e.touches) e.preventDefault(); 
+            };
+
+            const handleEnd = () => { isDrawing = false; };
+
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('touchstart', handleStart, {passive: false});
+            canvas.addEventListener('touchmove', handleMove, {passive: false});
+            canvas.addEventListener('touchend', handleEnd);
+        }
+
+        // 新版：直線與吸附道路繪製系統
+        function initRoadCanvas() {
+            const rc = document.getElementById('road-canvas');
+            if(!rc) return;
+            const rcCtx = rc.getContext('2d');
+
+            let drawingRoad = false;
+            let currentLine = null;
+
+            const getPos = (e) => {
+                const rect = rc.getBoundingClientRect();
+                const scaleX = rc.width / rect.width;
+                const scaleY = rc.height / rect.height;
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                if(e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                }
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            };
+
+            const start = (e) => {
+                if (selectedBlueprintToBuild !== 'bp_road') return;
+                drawingRoad = true;
+                const pos = getPos(e);
+                
+                // 尋找最近的端點來自動吸附
+                let snapX = pos.x;
+                let snapY = pos.y;
+                let snapDist = 30; // 靠近30像素以內自動吸附
+
+                if (gameState.roadLines) {
+                    gameState.roadLines.forEach(line => {
+                        const dist1 = Math.sqrt((pos.x - line.x1)**2 + (pos.y - line.y1)**2);
+                        if (dist1 < snapDist) { snapX = line.x1; snapY = line.y1; snapDist = dist1; }
+                        const dist2 = Math.sqrt((pos.x - line.x2)**2 + (pos.y - line.y2)**2);
+                        if (dist2 < snapDist) { snapX = line.x2; snapY = line.y2; snapDist = dist2; }
+                    });
+                }
+
+                currentLine = { x1: snapX, y1: snapY, x2: snapX, y2: snapY };
+            };
+
+            const move = (e) => {
+                if (!drawingRoad || selectedBlueprintToBuild !== 'bp_road') return;
+                const pos = getPos(e);
+                
+                // 強制畫直線 (自動校正水平或垂直)
+                const dx = pos.x - currentLine.x1;
+                const dy = pos.y - currentLine.y1;
+                
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    currentLine.x2 = pos.x;
+                    currentLine.y2 = currentLine.y1; // 水平線
+                } else {
+                    currentLine.x2 = currentLine.x1;
+                    currentLine.y2 = pos.y; // 垂直線
+                }
+
+                redrawRoads(currentLine);
+                if(e.cancelable) e.preventDefault();
+            };
+
+            const end = () => {
+                if (drawingRoad && currentLine) {
+                    drawingRoad = false;
+                    // 如果長度大於5才儲存，避免不小心點一下產生無效小圓點
+                    const dist = Math.sqrt((currentLine.x2 - currentLine.x1)**2 + (currentLine.y2 - currentLine.y1)**2);
+                    if (dist > 5) {
+                        if (!gameState.roadLines) gameState.roadLines = [];
+                        gameState.roadLines.push(currentLine);
+                        saveGame();
+                    }
+                    currentLine = null;
+                    redrawRoads();
+                }
+            };
+
+            rc.addEventListener('mousedown', start);
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+
+            rc.addEventListener('touchstart', start, {passive: false});
+            window.addEventListener('touchmove', move, {passive: false});
+            window.addEventListener('touchend', end);
+
+            rc.addEventListener('click', (e) => {
+                if (selectedBlueprintToBuild && selectedBlueprintToBuild !== 'bp_road') {
+                    handleDomeBuildingPlacement(e, rc);
+                }
+            });
+        }
+
+        function clearRoads() {
+            const rc = document.getElementById('road-canvas');
+            if(rc) {
+                const ctx = rc.getContext('2d');
+                ctx.clearRect(0, 0, rc.width, rc.height);
+                gameState.roadData = null;
+                gameState.roadLines = [];
+                saveGame();
+            }
+        }
+
+        function setTool(t) {
+            tool = t;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tool-' + t).classList.add('active');
+        }
+
+        function clearCanvas() { if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        function floodFill(startX, startY) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const x = Math.floor(startX); const y = Math.floor(startY);
+            const startIdx = (y * canvas.width + x) * 4;
+            const targetColor = [data[startIdx], data[startIdx+1], data[startIdx+2], data[startIdx+3]];
+            const hex = document.getElementById('color-picker').value;
+            const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
+            const fillRGB = [r, g, b, 255];
+            if (targetColor[0] === fillRGB[0] && targetColor[1] === fillRGB[1] && targetColor[2] === fillRGB[2]) return;
+            const stack = [[x, y]];
+            while(stack.length) {
+                const [cx, cy] = stack.pop();
+                if(cx < 0 || cx >= canvas.width || cy < 0 || cy >= canvas.height) continue;
+                const idx = (cy * canvas.width + cx) * 4;
+                if(Math.abs(data[idx]-targetColor[0])>20 || Math.abs(data[idx+1]-targetColor[1])>20 || Math.abs(data[idx+2]-targetColor[2])>20) continue;
+                data[idx] = fillRGB[0]; data[idx+1] = fillRGB[1]; data[idx+2] = fillRGB[2]; data[idx+3] = 255;
+                stack.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        async function openNews() {
+            document.getElementById('news-modal').classList.remove('hidden');
+            document.getElementById('news-content').innerHTML = '<p class="animate-pulse text-center py-6 text-indigo-500 font-black">記者正在為您瘋狂趕稿中... ✍️</p>';
+            
+            const bldgs = gameState.buildings.filter(b=>b.status==='completed').map(b => shopItemsData.find(i=>i.id === b.bpId)?.name).join('、') || '還沒有任何建築落成';
+            const prompt = `你是《海中圓頂》的報社記者。今天是圓頂發展的第 ${gameState.day} 天，目前圓頂內共有 ${gameState.residents.length} 位居民。已經建成的設施有：${bldgs}。
+            請以輕鬆、幽默、可愛的語氣，寫一篇大約 80~120 字的「圓頂日報」短新聞，描述今天圓頂內可能發生的趣事或是居民對新建築的反應。請多用 Emoji 來裝飾這篇報導。`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "你是一個幽默活潑的海底小鎮記者。" }] }
+            };
+
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, payload);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
+                document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
+            } catch(e) {
+                console.error(e);
+                document.getElementById('news-content').innerHTML = '<p class="text-red-500 text-center py-6 font-bold">報社記者遇到了一點亂流罷工了，請稍後再試！</p>';
+            }
+        }
+
+        function closeNews() {
+            document.getElementById('news-modal').classList.add('hidden');
+        }
+
+        function openShop() {
+            document.getElementById('shop-modal').classList.remove('hidden');
+            renderShopItems();
+        }
+
+        function closeShop() {
+            document.getElementById('shop-modal').classList.add('hidden');
+        }
+
+        function renderShopItems() {
+            const container = document.getElementById('shop-items-container');
+            container.innerHTML = '';
+            
+            shopItemsData.forEach(item => {
+                let isBought = false;
+                if (item.type === 'blueprint' && gameState.blueprints.includes(item.id)) isBought = true;
+                if (item.id === 'invite_boss' && gameState.bossJoined) isBought = true;
+                
+                const canAfford = gameState.coins >= item.price;
+                
+                let iconHTML = '';
+                if (item.icon.includes('<svg')) {
+                    iconHTML = item.icon;
+                } else {
+                    iconHTML = `<span class="text-3xl">${item.icon}</span>`;
+                }
+                
+                const div = document.createElement('div');
+                div.className = `p-6 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${isBought ? 'bg-slate-50 border-slate-200 opacity-60' : 'bg-white border-pink-100 shadow-md hover:border-pink-300'}`;
+                
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 flex items-center justify-center text-3xl">
+                                    ${iconHTML}
+                                </div>
+                                <h4 class="font-black text-slate-900 text-lg">${item.name}</h4>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 font-bold mb-6">${item.desc}</p>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <span class="font-black text-pink-500 text-center">${item.price} DC</span>
+                        <button onclick="buyShopItem('${item.id}')" 
+                            ${isBought || !canAfford ? 'disabled' : ''} 
+                            class="w-full py-4 rounded-xl font-black text-sm transition-all ${
+                                isBought ? 'bg-slate-200 text-slate-400' : 
+                                (canAfford ? 'bg-slate-950 text-white hover:bg-pink-500 active:scale-95 shadow-lg' : 'bg-slate-100 text-slate-400')
+                            }">
+                            ${isBought ? '已解鎖' : (canAfford ? '購買解鎖' : '夢想幣不足')}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function buyShopItem(itemId) {
+            const item = shopItemsData.find(i => i.id === itemId);
+            if (!item || gameState.coins < item.price) return;
+            
+            if (item.type === 'blueprint' && gameState.blueprints.includes(itemId)) return;
+            if (item.id === 'invite_boss' && gameState.bossJoined) return;
+
+            gameState.coins -= item.price;
+            
+            if (item.type === 'blueprint') {
+                gameState.blueprints.push(itemId);
+                showMessage(`成功解鎖了「${item.name}」！\n請前往「設計圓頂」將它配置到圓頂內吧。`);
+            } else if (item.id === 'invite_boss') {
+                gameState.bossJoined = true;
+                
+                const bossSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,40 5,5 40,20" fill="#111827"/><polygon points="85,40 95,5 60,20" fill="#111827"/><circle cx="50" cy="50" r="40" fill="#111827"/><path d="M 50 30 L 87 65 A 40 40 0 0 1 13 65 Z" fill="#ffffff"/><circle cx="32" cy="48" r="6" fill="#facc15"/><circle cx="68" cy="48" r="6" fill="#facc15"/><ellipse cx="32" cy="48" rx="1.5" ry="4" fill="#111827"/><ellipse cx="68" cy="48" rx="1.5" ry="4" fill="#111827"/><polygon points="47,60 53,60 50,64" fill="#f472b6"/><path d="M 45 68 Q 50 71 50 64 Q 50 71 55 68" fill="none" stroke="#111827" stroke-width="1.5"/><line x1="10" y1="58" x2="25" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="10" y1="63" x2="25" y2="63" stroke="#cbd5e1" stroke-width="1.5"/><line x1="90" y1="58" x2="75" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="90" y1="63" x2="75" y2="63" stroke="#cbd5e1" stroke-width="1.5"/></svg>`;
+                const bossImgURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(bossSVG)))}`;
+                
+                gameState.residents.push({
+                    name: 'boss',
+                    job: '商店老闆',
+                    personality: '熱情',
+                    img: bossImgURL
+                });
+                showMessage(`太棒了！店長「boss」已經正式加入圓頂成為居民了！`);
+                document.getElementById('chat-container').innerHTML = '';
+                generateDailyChat(); 
+            }
+
+            renderShopItems();
+            updateUI();
+            await saveGame(); 
+        }
+
+        function openMashaShop() {
+            document.getElementById('masha-modal').classList.remove('hidden');
+            renderMashaItems();
+        }
+
+        function closeMashaShop() {
+            document.getElementById('masha-modal').classList.add('hidden');
+        }
+
+        function renderMashaItems() {
+            const container = document.getElementById('masha-items-container');
+            container.innerHTML = '';
+            
+            mashaItemsData.forEach(item => {
+                let isBought = false;
+                if (item.id === 'invite_masha' && gameState.mashaJoined) isBought = true;
+                
+                const canAfford = gameState.coins >= item.price;
+                const ownedCount = gameState.decorations[item.id] || 0;
+                
+                const div = document.createElement('div');
+                div.className = `p-6 rounded-[2rem] border-2 transition-all flex flex-col justify-between ${isBought ? 'bg-slate-50 border-slate-200 opacity-60' : 'bg-white border-amber-100 shadow-md hover:border-amber-300'}`;
+                
+                let extraInfo = '';
+                if (item.id !== 'invite_masha') {
+                    extraInfo = `<p class="text-[10px] font-black text-amber-500 mt-1">目前擁有：${ownedCount} 組</p>`;
+                }
+
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 flex items-center justify-center text-3xl">
+                                    ${item.icon}
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-slate-900 text-lg">${item.name}</h4>
+                                    ${extraInfo}
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 font-bold mb-6">${item.desc}</p>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <span class="font-black text-amber-600 text-center">${item.price} DC</span>
+                        <button onclick="buyMashaItem('${item.id}')" 
+                            ${isBought || !canAfford ? 'disabled' : ''} 
+                            class="w-full py-4 rounded-xl font-black text-sm transition-all ${
+                                isBought ? 'bg-slate-200 text-slate-400' : 
+                                (canAfford ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-lg' : 'bg-slate-100 text-slate-400')
+                            }">
+                            ${isBought ? '已邀請' : (canAfford ? '購買' : '夢想幣不足')}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function buyMashaItem(itemId) {
+            const item = mashaItemsData.find(i => i.id === itemId);
+            if (!item || gameState.coins < item.price) return;
+            
+            if (item.id === 'invite_masha' && gameState.mashaJoined) return;
+
+            gameState.coins -= item.price;
+            
+            if (item.id === 'invite_masha') {
+                gameState.mashaJoined = true;
+                
+                const mashaSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ffffff"/><polygon points="15,35 15,10 40,25" fill="#8a7f72"/><polygon points="85,35 85,10 60,25" fill="#8a7f72"/><path d="M 25 22 Q 35 30 48 20 Q 50 18 52 20 Q 65 30 75 22 Q 65 10 50 10 Q 35 10 25 22 Z" fill="#8a7f72"/><circle cx="32" cy="48" r="6" fill="#d4e157"/><circle cx="68" cy="48" r="6" fill="#d4e157"/><ellipse cx="32" cy="48" rx="1.5" ry="4" fill="#111827"/><ellipse cx="68" cy="48" rx="1.5" ry="4" fill="#111827"/><polygon points="47,60 53,60 50,64" fill="#f472b6"/><path d="M 45 68 Q 50 71 50 64 Q 50 71 55 68" fill="none" stroke="#111827" stroke-width="1.5"/><line x1="10" y1="58" x2="25" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="10" y1="63" x2="25" y2="63" stroke="#cbd5e1" stroke-width="1.5"/><line x1="90" y1="58" x2="75" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="90" y1="63" x2="75" y2="63" stroke="#cbd5e1" stroke-width="1.5"/></svg>`;
+                const mashaImgURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(mashaSVG)))}`;
+                
+                gameState.residents.push({
+                    name: '瑪莎',
+                    job: '商店老闆',
+                    personality: '活潑',
+                    img: mashaImgURL
+                });
+                showMessage(`太棒了！活潑的屁貓「瑪莎」已經加入圓頂了！`);
+                document.getElementById('chat-container').innerHTML = '';
+                generateDailyChat(); 
+            } else {
+                if (!gameState.decorations[itemId]) gameState.decorations[itemId] = 0;
+                gameState.decorations[itemId]++;
+                showMessage(`成功購買了「${item.name}」！\n（消耗品，使用後需重新購買）`);
+            }
+
+            renderMashaItems();
+            updateUI();
+            await saveGame(); 
+        }
+
+        function openDome() {
+            document.getElementById('dome-modal').classList.remove('hidden');
+            selectedBlueprintToBuild = null;
+            renderOwnedBlueprints();
+            renderDomeBuildings();
+            redrawRoads();
+            
+            const architects = gameState.residents.filter(r => r.job === '建築師').length;
+            document.getElementById('architect-status').innerText = `建築師人數: ${architects} 人`;
+        }
+
+        function closeDome() {
+            document.getElementById('dome-modal').classList.add('hidden');
+            selectedBlueprintToBuild = null;
+        }
+
+        function renderOwnedBlueprints() {
+            const container = document.getElementById('owned-blueprints-container');
+            container.innerHTML = '';
+            
+            if (gameState.blueprints.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-10">尚未擁有任何藍圖，請先至商店解鎖喔！</p>';
+                return;
+            }
+
+            const architects = gameState.residents.filter(r => r.job === '建築師').length;
+
+            gameState.blueprints.forEach(bpId => {
+                const item = shopItemsData.find(i => i.id === bpId);
+                if (!item) return;
+
+                const isRoad = bpId === 'bp_road';
+                const isSelected = selectedBlueprintToBuild === bpId;
+                const canStart = isRoad ? true : architects >= item.minArch;
+                
+                const builtCount = gameState.buildings.filter(b => b.bpId === bpId).length;
+                const buildCost = isRoad ? 0 : (builtCount === 0 ? 0 : Math.floor(item.price * 2 / 3));
+                const canAffordBuild = isRoad ? true : gameState.coins >= buildCost;
+                
+                let iconHTML = '';
+                if (item.icon.includes('<svg')) {
+                    iconHTML = item.icon;
+                } else {
+                    iconHTML = `<span class="text-3xl">${item.icon}</span>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = `blueprint-btn p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected ? 'border-pink-500 bg-pink-50' : 'border-slate-100 bg-white hover:border-pink-200'}`;
+                
+                div.onclick = () => {
+                    if (!canStart) {
+                        return showMessage(`需要至少 ${item.minArch} 名建築師才能開始建造這個建築喔！`);
+                    }
+                    if (!canAffordBuild) {
+                        return showMessage(`夢想幣不足！再次建造此建築需要 ${buildCost} DC。`);
+                    }
+                    selectedBlueprintToBuild = bpId;
+                    renderOwnedBlueprints();
+                };
+
+                let conditionText = '';
+                if (isRoad) {
+                    conditionText = `
+                        <p class="text-xs font-bold text-slate-500">不需建築師 | 永久無限繪製</p>
+                        <p class="text-xs font-black text-amber-500 mt-1">選中後直接在畫布上畫線</p>
+                    `;
+                } else {
+                    conditionText = `
+                        <p class="text-xs font-bold ${canStart ? 'text-slate-500' : 'text-red-400'}">
+                            需 ${item.minArch} 名建築師 | 工程點數: ${item.points}
+                        </p>
+                        <p class="text-xs font-black ${canAffordBuild ? 'text-pink-500' : 'text-red-500'} mt-1">
+                            ${builtCount === 0 ? '首棟免費' : `建造費用: ${buildCost} DC`}
+                        </p>
+                    `;
+                }
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-3xl w-10 flex justify-center">${iconHTML}</div>
+                        <div>
+                            <p class="font-black text-slate-900">${item.name}</p>
+                            ${conditionText}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function handleDomeBuildingPlacement(e, element) {
+            const bpInfo = shopItemsData.find(i => i.id === selectedBlueprintToBuild);
+            if (!bpInfo) return;
+
+            const builtCount = gameState.buildings.filter(b => b.bpId === selectedBlueprintToBuild).length;
+            const buildCost = builtCount === 0 ? 0 : Math.floor(bpInfo.price * 2 / 3);
+
+            if (gameState.coins < buildCost) {
+                selectedBlueprintToBuild = null;
+                renderOwnedBlueprints();
+                return showMessage(`夢想幣不足！建造這棟建築需要 ${buildCost} DC。`);
+            }
+
+            const rect = element.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            const dist = Math.sqrt(Math.pow(x - 50, 2) + Math.pow(y - 50, 2));
+            if (dist > 45) {
+                return showMessage("請把建築放置在靠近圓頂中心一點的地方喔！");
+            }
+
+            gameState.coins -= buildCost;
+
+            gameState.buildings.push({
+                id: 'bld_' + Date.now(),
+                bpId: selectedBlueprintToBuild,
+                x: x,
+                y: y,
+                progress: 0,
+                status: 'building',
+                resident: null,
+                decoration: null 
+            });
+
+            if (buildCost === 0) {
+                showMessage(`已免費放置首棟「${bpInfo.name}」工地！\n建築師們會在每天夜晚自動進行工程。`);
+            } else {
+                showMessage(`已花費 ${buildCost} DC 放置「${bpInfo.name}」工地！\n建築師們會在每天夜晚自動進行工程。`);
+            }
+            
+            selectedBlueprintToBuild = null;
+            renderOwnedBlueprints();
+            renderDomeBuildings();
+            updateUI(); 
+            saveGame();
+        }
+
+        function renderDomeBuildings() {
+            const canvasDiv = document.getElementById('dome-buildings-container');
+            canvasDiv.innerHTML = ''; 
+
+            gameState.buildings.forEach(b => {
+                const item = shopItemsData.find(i => i.id === b.bpId);
+                if (!item) return;
+
+                const bDiv = document.createElement('div');
+                bDiv.className = 'building-item pointer-events-auto';
+                bDiv.style.left = `${b.x}%`;
+                bDiv.style.top = `${b.y}%`;
+                bDiv.style.width = `${item.size}%`;
+                bDiv.style.height = `${item.size}%`;
+
+                bDiv.onclick = (e) => {
+                    if (selectedBlueprintToBuild) return; 
+                    e.stopPropagation();
+
+                    if (b.status === 'completed') {
+                        if (item.livable) {
+                            if (!b.decoration) {
+                                openDecorateModal(b.id);
+                            } else {
+                                openAssignModal(b.id);
+                            }
+                        } else {
+                            showMessage(`這是「${item.name}」，居民不能把家安在這裡喔！`);
+                        }
+                    } else {
+                        showMessage(`「${item.name}」還在施工中，進度：${Math.floor((b.progress / item.points) * 100)}%`);
+                    }
+                };
+
+                if (b.status === 'building') {
+                    const pct = Math.floor((b.progress / item.points) * 100);
+                    bDiv.innerHTML = `
+                        <div class="bg-slate-900/80 backdrop-blur-sm text-white rounded-xl p-2 flex flex-col items-center shadow-lg transform scale-75 cursor-wait">
+                            <span class="text-xl mb-1 opacity-50">🚧</span>
+                            <span class="text-[10px] font-black whitespace-nowrap">${pct}%</span>
+                        </div>
+                    `;
+                } else {
+                    let residentBadge = '';
+                    if (b.resident) {
+                        const res = gameState.residents.find(r => r.name.toLowerCase() === b.resident.toLowerCase());
+                        if (res) {
+                            residentBadge = `<img src="${res.img}" class="absolute -top-3 -right-3 w-12 h-12 rounded-full border-[3px] border-white shadow-xl object-cover z-30" onerror="this.style.display='none'">`;
+                        }
+                    }
+                    
+                    let iconHTML = '';
+                    if (item.icon.includes('<svg')) {
+                        iconHTML = item.icon;
+                    } else {
+                        iconHTML = `<span style="font-size: clamp(20px, 5vw, 60px);">${item.icon}</span>`;
+                    }
+                    
+                    let decorBadge = '';
+                    if (item.livable && !b.decoration) {
+                        decorBadge = `<span class="absolute -bottom-3 text-[10px] bg-amber-400 text-white px-2 py-0.5 rounded-full font-black shadow-md whitespace-nowrap z-20">需裝潢</span>`;
+                    }
+
+                    bDiv.innerHTML = `
+                        <div class="relative w-full h-full flex items-center justify-center filter drop-shadow-xl hover:scale-110 transition-transform cursor-pointer" title="${item.name} ${item.livable ? (b.decoration ? `(${b.decoration})` : '(尚未裝潢)') : ''}">
+                            ${iconHTML}
+                            ${residentBadge}
+                            ${decorBadge}
+                        </div>
+                    `;
+                }
+                canvasDiv.appendChild(bDiv);
+            });
+        }
+
+        function openDecorateModal(buildingId) {
+            currentBuildingIdForDecorate = buildingId;
+            const designers = gameState.residents.filter(r => r.job === '室內設計師').length;
+            const statusDiv = document.getElementById('decorate-designer-status');
+            
+            if (designers > 0) {
+                statusDiv.innerHTML = `<span class="text-green-500">✅ 圓頂內有 ${designers} 位室內設計師，可以開工！</span>`;
+            } else {
+                statusDiv.innerHTML = `<span class="text-red-500">❌ 缺少室內設計師，請先邀請一位才能裝潢喔！</span>`;
+            }
+
+            renderDecorateList();
+            document.getElementById('decorate-modal').classList.remove('hidden');
+        }
+
+        function closeDecorateModal() {
+            document.getElementById('decorate-modal').classList.add('hidden');
+            currentBuildingIdForDecorate = null;
+        }
+
+        function renderDecorateList() {
+            const container = document.getElementById('decorate-list');
+            container.innerHTML = '';
+            
+            const hasDesigner = gameState.residents.some(r => r.job === '室內設計師');
+            const ownedDecors = Object.entries(gameState.decorations).filter(([id, count]) => count > 0);
+
+            if (ownedDecors.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">您的庫存沒有裝潢組合，請去「瑪瑪天地」購買！</p>';
+                return;
+            }
+
+            ownedDecors.forEach(([decorId, count]) => {
+                const itemInfo = mashaItemsData.find(i => i.id === decorId);
+                if (!itemInfo) return;
+
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all border-slate-100 bg-white hover:border-amber-200 ${!hasDesigner ? 'opacity-50 cursor-not-allowed' : ''}`;
+                btn.onclick = () => {
+                    if (hasDesigner) applyDecoration(decorId);
+                };
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-3xl">${itemInfo.icon}</span>
+                        <div class="text-left">
+                            <p class="font-black text-slate-900 text-sm">${itemInfo.name}</p>
+                            <p class="text-[10px] font-bold text-amber-500">庫存: ${count} 組</p>
+                        </div>
+                    </div>
+                    <div><span class="text-xs font-black text-slate-400 bg-slate-50 px-3 py-2 rounded-xl">套用裝潢</span></div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        async function applyDecoration(decorId) {
+            if (!currentBuildingIdForDecorate) return;
+            const house = gameState.buildings.find(x => x.id === currentBuildingIdForDecorate);
+            const decorInfo = mashaItemsData.find(i => i.id === decorId);
+            
+            if (house && decorInfo && gameState.decorations[decorId] > 0) {
+                gameState.decorations[decorId]--; 
+                house.decoration = decorInfo.name;
+                
+                closeDecorateModal();
+                renderDomeBuildings();
+                showMessage(`太棒了！房屋已經成功套用「${decorInfo.name}」！\n現在您可以點擊房屋安排居民入住了。`);
+                await saveGame();
+            }
+        }
+
+        function openAssignModal(buildingId) {
+            currentBuildingIdForAssign = buildingId;
+            renderAssignList();
+            document.getElementById('assign-modal').classList.remove('hidden');
+        }
+
+        function closeAssignModal() {
+            document.getElementById('assign-modal').classList.add('hidden');
+            currentBuildingIdForAssign = null;
+        }
+
+        function renderAssignList() {
+            const container = document.getElementById('assign-list');
+            container.innerHTML = '';
+            
+            const b = gameState.buildings.find(x => x.id === currentBuildingIdForAssign);
+            
+            if (gameState.residents.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">目前沒有任何居民喔！</p>';
+                return;
+            }
+
+            gameState.residents.forEach(res => {
+                const isCurrentResident = (b.resident === res.name);
+                const liveElsewhere = gameState.buildings.find(x => x.id !== currentBuildingIdForAssign && x.resident === res.name);
+
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isCurrentResident ? 'border-pink-500 bg-pink-50' : 'border-slate-100 bg-white hover:border-pink-200'}`;
+                btn.onclick = () => assignResident(res.name);
+
+                let extraTag = '';
+                if (isCurrentResident) extraTag = '<span class="text-xs font-black text-pink-500">✅ 現居於此</span>';
+                else if (liveElsewhere) extraTag = `<span class="text-xs font-bold text-slate-400">已住在別處</span>`;
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <img src="${res.img}" class="w-10 h-10 rounded-full object-cover border border-slate-200" onerror="this.style.display='none'">
+                        <div class="text-left">
+                            <p class="font-black text-slate-900 text-sm">${res.name}</p>
+                            <p class="text-[10px] font-bold text-slate-500">${res.job}</p>
+                        </div>
+                    </div>
+                    <div>${extraTag}</div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        async function assignResident(residentName) {
+            if (!currentBuildingIdForAssign) return;
+
+            const oldHouse = gameState.buildings.find(x => x.resident === residentName);
+            if (oldHouse) oldHouse.resident = null;
+
+            const house = gameState.buildings.find(x => x.id === currentBuildingIdForAssign);
+            if (house) house.resident = residentName;
+
+            closeAssignModal();
+            renderDomeBuildings();
+            showMessage(`已成功安排 ${residentName} 入住！`);
+            await saveGame();
+        }
+
+        async function unassignResident() {
+            if (!currentBuildingIdForAssign) return;
+            const house = gameState.buildings.find(x => x.id === currentBuildingIdForAssign);
+            if (house) house.resident = null;
+            closeAssignModal();
+            renderDomeBuildings();
+            showMessage("已經將這棟房屋騰空囉。");
+            await saveGame();
+        }
+
+        function updateJobSelect() {
+            const select = document.getElementById('res-job');
+            if(!select) return;
+            const hasMayor = gameState.residents.some(r => r.job === '村長');
+            const jobs = [
+                { id: '村長', name: '🏛️ 村長 (撥款 500 DC)', disabled: hasMayor },
+                { id: '室內設計師', name: '🎨 室內設計師 (裝潢房屋必備)', disabled: false },
+                { id: '工匠', name: '⚒️ 工匠 (產出稀有寶物)', disabled: false },
+                { id: '建築師', name: '📐 建築師 (每日人口上限+2)', disabled: false },
+                { id: '平民', name: '🏠 平民 (提升全體運氣)', disabled: false }
+            ];
+            select.innerHTML = jobs.map(j => 
+                `<option value="${j.id}" ${j.disabled ? 'disabled' : ''}>${j.name} ${j.disabled ? '(已有領袖)' : ''}</option>`
+            ).join('');
+        }
+
+        function updateUI() {
+            document.getElementById('day-count').innerText = gameState.day;
+            document.getElementById('dream-coins').innerText = gameState.coins;
+            document.getElementById('pop-status').innerText = `人口: ${gameState.residents.length}/${gameState.popLimit}`;
+
+            const invList = document.getElementById('inventory-list');
+            invList.innerHTML = '';
+            if (Object.keys(gameState.inventory).length === 0) invList.innerHTML = '<p class="italic text-slate-300">目前沒有物資...</p>';
+            for (let [item, count] of Object.entries(gameState.inventory)) {
+                const d = document.createElement('div');
+                d.className = "flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm animate-fade-in";
+                d.innerHTML = `<span class="font-black text-slate-700">${item}</span><span class="text-pink-500 font-black">x${count}</span>`;
+                invList.appendChild(d);
+            }
+
+            const techTree = document.getElementById('tech-tree');
+            techTree.innerHTML = '';
+            gameState.techs.forEach(t => {
+                const canAfford = gameState.coins >= t.cost;
+                const d = document.createElement('div');
+                d.className = `p-6 rounded-[2.5rem] border-2 transition-all ${canAfford ? 'bg-white border-pink-50 shadow-sm' : 'bg-slate-50 border-transparent opacity-60'}`;
+                d.innerHTML = `
+                    <div class="flex justify-between font-black text-xs mb-2"><span class="text-slate-950">${t.name} (Lv.${t.lv})</span><span class="text-pink-500">${t.cost} DC</span></div>
+                    <p class="text-[11px] font-bold text-slate-400 mb-4 leading-relaxed">${t.desc}</p>
+                    <button onclick="upgradeTech('${t.id}')" ${!canAfford ? 'disabled' : ''} class="w-full py-3 text-[11px] font-black rounded-xl transition-all ${canAfford ? 'bg-slate-950 text-white hover:bg-pink-500' : 'bg-slate-200 text-slate-400'}">研發升級</button>
+                `;
+                techTree.appendChild(d);
+            });
+
+            const skillSection = document.getElementById('skill-section');
+            const skillDiv = document.getElementById('available-skills');
+            if (gameState.residents.length > 0 && !gameState.usedSkillToday) {
+                skillSection.classList.remove('hidden');
+                skillDiv.innerHTML = '';
+                gameState.residents.forEach((res, index) => {
+                    if (res.job === '建築師' || res.job === '室內設計師') return; 
+                    const btn = document.createElement('button');
+                    btn.className = "w-full py-5 bg-slate-950 text-white rounded-[1.5rem] font-black text-sm hover:bg-pink-500 transition-all flex items-center justify-center gap-3 active:scale-95";
+                    btn.innerHTML = `<span>${res.name}</span> <span class="opacity-40 text-[10px] bg-white/20 px-2 py-0.5 rounded-full">${res.job}</span>`;
+                    btn.onclick = () => useSkill(index);
+                    skillDiv.appendChild(btn);
+                });
+                if(skillDiv.innerHTML === '') skillSection.classList.add('hidden');
+            } else { skillSection.classList.add('hidden'); }
+        }
+
+        async function generateDailyChat() {
+            if (gameState.residents.length === 0) return;
+            const list = gameState.residents.map(r => `${r.name}(${r.job},${r.personality})`).join(', ');
+            const prompt = `你是《海中圓頂》夢想生活的記錄官。目前居民有：${list}。
+            請生成一段包含 3-5 句的群組對話。
+            規則：
+            1. 如果只有 1 位居民，請他對著領主自言自語。
+            2. 如果有 2 位以上居民，請讓他們互相聊天、吐槽或分享今天的趣事，展現多人互動。
+            3. 對話格式嚴格為「姓名: 內容」。
+            4. 內容要溫馨、帶點貓咪般的輕快感。`;
+
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    contents: [{parts:[{text: prompt}]}]
+                });
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const lines = text.split('\n').filter(l => l.includes(':'));
+                lines.forEach((l, i) => {
+                    const [n, c] = l.split(':');
+                    setTimeout(() => {
+                        addChatMessage(n.trim(), c.trim());
+                        if (Math.random() < 0.25) {
+                            const items = ["晶透珍珠", "五彩貝殼", "海中櫻花葉", "發光海星"];
+                            const gift = items[Math.floor(Math.random()*items.length)];
+                            gameState.inventory[gift] = (gameState.inventory[gift] || 0) + 1;
+                            updateUI();
+                            saveGame(); 
+                        }
+                    }, i * 900);
+                });
+            } catch(e) {
+                addChatMessage(gameState.residents[0].name, "今天的圓頂，也充滿著櫻花的香氣。");
+            }
+        }
+
+        function addChatMessage(name, content, type = "user") {
+            const container = document.getElementById('chat-container');
+            if(!container) return;
+            const d = document.createElement('div');
+            if (type === "system") {
+                d.className = "text-center text-[11px] font-black text-slate-300 italic py-4 bg-slate-50/50 rounded-full";
+                d.innerText = content;
+            } else {
+                let res = gameState.residents.find(r => name.toLowerCase().includes(r.name.toLowerCase()) || r.name.toLowerCase().includes(name.toLowerCase()));
+                if (!res) res = gameState.residents[0];
+
+                d.className = "flex gap-5 items-start animate-fade-in";
+                d.innerHTML = `
+                    <div class="w-16 h-16 rounded-[2rem] bg-white border-2 border-slate-50 overflow-hidden shadow-sm shrink-0">
+                        <img src="${res ? res.img : 'https://placehold.co/100'}" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                    </div>
+                    <div class="bg-white p-6 rounded-[2.5rem] rounded-tl-none shadow-sm border border-slate-50 max-w-[85%] text-slate-900">
+                        <p class="text-[10px] font-black text-pink-400 mb-2 uppercase tracking-widest">${name}</p>
+                        <p class="text-base font-bold leading-relaxed">${content}</p>
+                    </div>
+                `;
+            }
+            container.appendChild(d);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function upgradeTech(tid) {
+            const t = gameState.techs.find(x => x.id === tid);
+            if (gameState.coins >= t.cost) {
+                gameState.coins -= t.cost; t.lv++;
+                if (tid === 'space') gameState.popLimit += 5;
+                t.cost = Math.floor(t.cost * 1.8);
+                updateUI();
+                saveGame(); 
+            }
+        }
+
+        function useSkill(idx) {
+            if (gameState.usedSkillToday) return;
+            const res = gameState.residents[idx];
+            gameState.usedSkillToday = true;
+            if (res.job === '村長') { gameState.coins += 500; addChatMessage("系統", `${res.name} 行使領袖職權，撥款 500 DC！`, "system"); }
+            else if (res.job === '工匠') { const item = ["深海金屬", "古代羅盤"][Math.floor(Math.random()*2)]; gameState.inventory[item] = (gameState.inventory[item] || 0) + 1; addChatMessage("系統", `${res.name} 發揮工藝，製作了 ${item}！`, "system"); }
+            else if (res.job === '平民') { addChatMessage("系統", `${res.name} 的熱情感染了大家，禮物機率大幅提升！`, "system"); }
+            updateUI();
+            saveGame(); 
+        }
+
+        function openAirdrop() {
+            if (gameState.residents.length >= gameState.popLimit) {
+                return showMessage("圓頂空間已滿！請研發擴張工程或招募建築師。");
+            }
+            document.getElementById('airdrop-modal').classList.remove('hidden');
+            updateJobSelect();
+            document.getElementById('res-name').value = "";
+            clearCanvas();
+        }
+        function closeAirdrop() { document.getElementById('airdrop-modal').classList.add('hidden'); }
+
+        async function confirmResident() {
+            const name = document.getElementById('res-name').value.trim() || "無名小貓";
+            const job = document.getElementById('res-job').value;
+            const personality = document.getElementById('res-personality').value;
+            const img = canvas.toDataURL();
+            gameState.residents.push({ name, job, personality, img });
+            closeAirdrop();
+            if (gameState.residents.length === 1) document.getElementById('chat-container').innerHTML = '';
+            
+            generateDailyChat();
+            updateUI();
+            await saveGame();
+        }
+
+        function sellAll() {
+            let total = 0;
+            for (let k in gameState.inventory) { total += gameState.inventory[k] * 200; }
+            if (total > 0) {
+                gameState.coins += total;
+                gameState.inventory = {};
+                addChatMessage("系統", `清空倉庫物資，獲利 ${total} DC！`, "system");
+                updateUI();
+                saveGame(); 
+            } else {
+                showMessage("目前倉庫沒有東西可以賣喔！");
+            }
+        }
+
+        function endDay() {
+            if (gameState.residents.length === 0) return showMessage("還沒有人居住在這裡，快召喚一個夥伴吧！");
+            document.getElementById('night-modal').classList.remove('hidden');
+        }
+
+        function nightAction(action) {
+            document.getElementById('night-modal').classList.add('hidden');
+            gameState.day++;
+            gameState.usedSkillToday = false;
+            
+            let passiveIncome = gameState.techs.find(t => t.id === 'tourism').lv * 150;
+            let facilityIncome = 0;
+            gameState.buildings.forEach(b => {
+                if (b.status === 'completed') {
+                    const bp = shopItemsData.find(i => i.id === b.bpId);
+                    if (bp && bp.isCommercial) {
+                        const min = bp.minIncome || 300;
+                        const max = bp.maxIncome || 1000;
+                        const income = Math.floor(Math.random() * (max - min + 1)) + min;
+                        facilityIncome += income;
+                    }
+                }
+            });
+
+            gameState.coins += (passiveIncome + facilityIncome);
+            if (action === 'work') gameState.coins += 200;
+            
+            const architects = gameState.residents.filter(r => r.job === '建築師').length;
+            gameState.popLimit += (architects * 2);
+
+            document.getElementById('chat-container').innerHTML = '';
+            addChatMessage("系統", `--- 第 ${gameState.day} 天 清晨的櫻花隨波逐流 ---`, "system");
+            
+            if (facilityIncome > 0) {
+                setTimeout(() => {
+                    addChatMessage("系統", `💰 您的各項商業設施昨日營業額共獲得 ${facilityIncome} DC！`, "system");
+                }, 400);
+            }
+
+            let builtSomething = false;
+            gameState.buildings.forEach(b => {
+                if (b.status === 'building') {
+                    const bp = shopItemsData.find(i => i.id === b.bpId);
+                    if (bp && architects >= bp.minArch) {
+                        let progressPoints = architects > 0 ? architects : 1;
+                        b.progress += progressPoints;
+                        
+                        if (b.progress >= bp.points) {
+                            b.progress = bp.points;
+                            b.status = 'completed';
+                            setTimeout(() => {
+                                addChatMessage("系統", `🎉 工程順利！「${bp.name}」已經在圓頂內完工落成了！`, "system");
+                            }, 800);
+                        }
+                        builtSomething = true;
+                    }
+                }
+            });
+
+            if (builtSomething && architects > 0) {
+                 setTimeout(() => {
+                    addChatMessage("系統", `👷 建築團隊昨晚努力趕工，推進了圓頂工程進度！`, "system");
+                }, 1200);
+            }
+
+            generateDailyChat();
+            updateUI();
+            saveGame(); 
+        }
+
+        function createSakura() {
+            const p = document.createElement('div');
+            p.className = 'sakura-petal';
+            p.innerText = '🌸';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.fontSize = (Math.random() * 15 + 10) + 'px';
+            p.style.animationDuration = (Math.random() * 6 + 6) + 's';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 12000);
+        }
+
+        function createPaws() {
+            const bg = document.getElementById('paw-bg');
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement('div');
+                p.className = 'paw-print text-7xl';
+                p.innerText = '🐾';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.style.transform = `rotate(${Math.random() * 360}deg)`;
+                bg.appendChild(p);
+            }
+        }
+
+        window.closeMessage = closeMessage;
+        window.handleMusicUpload = handleMusicUpload;
+        window.toggleMusic = toggleMusic;
+        window.setTool = setTool;
+        window.clearCanvas = clearCanvas;
+        window.upgradeTech = upgradeTech;
+        window.useSkill = useSkill;
+        window.openAirdrop = openAirdrop;
+        window.closeAirdrop = closeAirdrop;
+        window.confirmResident = confirmResident;
+        window.sellAll = sellAll;
+        window.endDay = endDay;
+        window.nightAction = nightAction;
+        window.loadSavedGame = loadSavedGame;
+        window.startNewGame = startNewGame;
+        window.openShop = openShop;
+        window.closeShop = closeShop;
+        window.buyShopItem = buyShopItem;
+        window.openMashaShop = openMashaShop;
+        window.closeMashaShop = closeMashaShop;
+        window.buyMashaItem = buyMashaItem;
+        window.openDome = openDome;
+        window.closeDome = closeDome;
+        window.handleDomeClick = handleDomeBuildingPlacement;
+        window.closeAssignModal = closeAssignModal;
+        window.assignResident = assignResident;
+        window.unassignResident = unassignResident;
+        window.openDecorateModal = openDecorateModal;
+        window.closeDecorateModal = closeDecorateModal;
+        window.applyDecoration = applyDecoration;
+        window.openNews = openNews;
+        window.closeNews = closeNews;
+        window.clearRoads = clearRoads;
+
+        window.onload = () => {
+            initCanvas();
+            initRoadCanvas();
+            createPaws();
+            setInterval(createSakura, 2000);
+            updateUI();
+            console.log("海中圓頂 夢想生活 已載入。");
+        };
+    </script>
+</body>
+</html>
