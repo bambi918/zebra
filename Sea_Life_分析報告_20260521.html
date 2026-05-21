@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海中圓頂 — 技術分析報告</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* Header */
+  .report-header {
+    background: #0f172a;
+    color: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2rem;
+  }
+  .report-header h1 { font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+  .report-header .meta { font-size: 0.8rem; color: #94a3b8; }
+  .report-header .meta span { margin-right: 1.5rem; }
+
+  /* Summary cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    border: 2px solid #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .card .label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.2rem; }
+  .card .value { font-size: 1rem; font-weight: 900; color: #0f172a; }
+  .card.green { border-color: #bbf7d0; background: #f0fdf4; }
+  .card.green .value { color: #16a34a; }
+  .card.yellow { border-color: #fef08a; background: #fefce8; }
+  .card.yellow .value { color: #ca8a04; }
+
+  /* Sections */
+  .section {
+    background: white;
+    border-radius: 1.25rem;
+    border: 2px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-header {
+    padding: 1.25rem 1.75rem;
+    border-bottom: 2px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fafafa;
+  }
+  .section-num {
+    background: #0f172a;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .section-header h2 { font-size: 1rem; font-weight: 900; color: #0f172a; }
+  .section-body { padding: 1.75rem; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 1rem 0; }
+  th {
+    background: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* Status badges */
+  .ok  { background: #dcfce7; color: #16a34a; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .bad { background: #fee2e2; color: #dc2626; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .warn{ background: #fef9c3; color: #b45309; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .new { background: #ede9fe; color: #7c3aed; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+
+  /* Code blocks */
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    font-family: "Consolas", "Fira Code", monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+  .code-block .cmt  { color: #64748b; }
+  .code-block .kw   { color: #93c5fd; }
+  .code-block .str  { color: #86efac; }
+  .code-block .fn   { color: #fde68a; }
+  .code-block .num  { color: #f9a8d4; }
+
+  /* Change items */
+  .change-item {
+    border: 2px solid #f1f5f9;
+    border-radius: 1rem;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .change-item:last-child { margin-bottom: 0; }
+  .change-header {
+    padding: 0.9rem 1.25rem;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  .change-num {
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.35rem;
+  }
+  .change-num.purple { background: #ede9fe; color: #7c3aed; }
+  .change-header strong { font-size: 0.9rem; font-weight: 800; }
+  .change-header .location { font-size: 0.75rem; color: #94a3b8; font-family: monospace; margin-left: auto; }
+  .change-body { padding: 1.25rem; }
+  .change-body p { font-size: 0.875rem; color: #475569; margin-bottom: 0.75rem; }
+  .change-body p:last-child { margin-bottom: 0; }
+
+  /* Before/after labels */
+  .diff-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+  .diff-label.before { color: #ef4444; }
+  .diff-label.after  { color: #22c55e; }
+
+  /* Maintenance tip boxes */
+  .tip-box {
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+  .tip-box:last-child { margin-bottom: 0; }
+  .tip-box.green  { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+  .tip-box.yellow { background: #fefce8; border: 1.5px solid #fef08a; }
+  .tip-box.blue   { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+  .tip-box.purple { background: #faf5ff; border: 1.5px solid #e9d5ff; }
+  .tip-box h4 { font-weight: 800; margin-bottom: 0.4rem; font-size: 0.85rem; }
+  .tip-box.green  h4 { color: #15803d; }
+  .tip-box.yellow h4 { color: #92400e; }
+  .tip-box.blue   h4 { color: #1d4ed8; }
+  .tip-box.purple h4 { color: #7c3aed; }
+  .tip-box ul { padding-left: 1.25rem; margin-top: 0.3rem; }
+  .tip-box li { margin-bottom: 0.2rem; color: #475569; }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .flow-step {
+    background: #f1f5f9;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    color: #334155;
+  }
+  .flow-arrow { color: #94a3b8; font-size: 1rem; }
+  .flow-step.highlight { background: #0f172a; color: white; }
+
+  h3 { font-size: 0.9rem; font-weight: 800; color: #0f172a; margin: 1.25rem 0 0.6rem; }
+  h3:first-child { margin-top: 0; }
+  hr { border: none; border-top: 2px solid #f1f5f9; margin: 1.5rem 0; }
+
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>🏰 海中圓頂 夢想生活 — 技術分析報告</h1>
+    <div class="meta">
+      <span>📁 Sea_Life_20260519_noBase64.html</span>
+      <span>📅 分析日期：2026-05-21</span>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="cards">
+    <div class="card green">
+      <div class="icon">✅</div>
+      <div class="label">版本升級</div>
+      <div class="value">已修復相容性</div>
+    </div>
+    <div class="card green">
+      <div class="icon">💾</div>
+      <div class="label">存檔支援</div>
+      <div class="value">三環境均可</div>
+    </div>
+    <div class="card green">
+      <div class="icon">📥📤</div>
+      <div class="label">跨瀏覽器</div>
+      <div class="value">匯出／匯入</div>
+    </div>
+    <div class="card yellow">
+      <div class="icon">🔧</div>
+      <div class="label">總改動處</div>
+      <div class="value">8 個位置</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Analysis -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">ONE</span>
+      <h2>分析結果</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>1-1　版本升級相容性</h3>
+      <table>
+        <tr><th>情況</th><th>改版前</th><th>改版後</th></tr>
+        <tr>
+          <td>新增 gameState 欄位</td>
+          <td><span class="ok">✅ 安全</span></td>
+          <td><span class="ok">✅ 安全</span></td>
+        </tr>
+        <tr>
+          <td>刪除 gameState 欄位</td>
+          <td><span class="ok">✅ 安全</span></td>
+          <td><span class="ok">✅ 安全</span></td>
+        </tr>
+        <tr>
+          <td>重新命名欄位</td>
+          <td><span class="warn">⚠️ 需手動 migration</span></td>
+          <td><span class="warn">⚠️ 需手動 migration</span></td>
+        </tr>
+        <tr>
+          <td><strong>新增科技 (techs)</strong></td>
+          <td><span class="bad">💥 舊存檔看不到新科技</span></td>
+          <td><span class="ok">✅ 已修復，用 id 合併</span></td>
+        </tr>
+      </table>
+
+      <p style="font-size:0.85rem; color:#64748b; margin-top:0.5rem;">
+        <strong>核心問題</strong>：原本 spread 語法會把舊存檔的整個 <code>techs</code> 陣列覆蓋掉新版，
+        導致更新後加入的新科技，舊玩家讀檔後永遠看不到。
+      </p>
+
+      <hr>
+
+      <h3>1-2　存檔機制原始問題</h3>
+      <p style="font-size:0.85rem; color:#475569; margin-bottom:0.75rem;">
+        原始程式碼只有 Firebase Firestore 一條路，沒有任何 fallback：
+      </p>
+      <div class="code-block"><span class="kw">async function</span> <span class="fn">saveGame</span>() {
+  <span class="kw">if</span> (!userId || !db) <span class="kw">return</span>;  <span class="cmt">// ← 沒有 Firebase 就靜默放棄，什麼都不存</span>
+  ...
+}</div>
+
+      <table>
+        <tr><th>執行環境</th><th>改版前</th><th>改版後</th></tr>
+        <tr>
+          <td>🎨 Gemini Canvas</td>
+          <td><span class="ok">✅ Firebase 正常</span></td>
+          <td><span class="ok">✅ Firebase 正常</span></td>
+        </tr>
+        <tr>
+          <td>🌐 GitHub Pages</td>
+          <td><span class="bad">❌ 無法存檔</span></td>
+          <td><span class="ok">✅ localStorage</span></td>
+        </tr>
+        <tr>
+          <td>⚙️ Google Apps Script</td>
+          <td><span class="bad">❌ 無法存檔</span></td>
+          <td><span class="ok">✅ localStorage</span></td>
+        </tr>
+        <tr>
+          <td>📁 本機 file://</td>
+          <td><span class="bad">❌ 無法存檔</span></td>
+          <td><span class="ok">✅ localStorage</span></td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <h3>1-3　跨瀏覽器限制（localStorage 的根本限制）</h3>
+      <table>
+        <tr><th>情境</th><th>存檔是否保留</th></tr>
+        <tr><td>同瀏覽器重新整理</td><td><span class="ok">✅ 保留</span></td></tr>
+        <tr><td>同瀏覽器關掉再開</td><td><span class="ok">✅ 保留</span></td></tr>
+        <tr><td>無痕 / 私人瀏覽模式</td><td><span class="bad">❌ 關閉即清除</span></td></tr>
+        <tr><td>換瀏覽器（Chrome → Firefox）</td><td><span class="bad">❌ 各自獨立</span></td></tr>
+        <tr><td>換裝置（手機 → 電腦）</td><td><span class="bad">❌ 各自獨立</span></td></tr>
+        <tr><td><strong>使用匯出/匯入功能手動搬移</strong></td><td><span class="new">✅ 本次新增解法</span></td></tr>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- Section 2: Changes -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">TWO</span>
+      <h2>改動內容（共 8 處）</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>🛡️ 版本相容性修復（3 處）</h3>
+
+      <!-- Change 1 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 1</span>
+          <strong>gameState 加入 saveVersion</strong>
+          <span class="location">let gameState = { ... }</span>
+        </div>
+        <div class="change-body">
+          <p>在 gameState 頂端加入版本號，供未來大改版時做版本判斷依據。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="kw">let</span> gameState = {
+  day: <span class="num">1</span>,
+  coins: <span class="num">1000</span>, ...</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">let</span> gameState = {
+  saveVersion: <span class="num">2</span>,  <span class="cmt">// ← 新增</span>
+  day: <span class="num">1</span>,
+  coins: <span class="num">1000</span>, ...</div>
+        </div>
+      </div>
+
+      <!-- Change 2 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 2</span>
+          <strong>loadSavedGame — techs 用 id 合併</strong>
+          <span class="location">function loadSavedGame()</span>
+        </div>
+        <div class="change-body">
+          <p>舊存檔讀入時，先備份新版 techs 陣列，spread 後再用 id 對齊合併，確保新增的科技對舊玩家也可見。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block">gameState = { ...gameState, ...tempSaveData };
+<span class="cmt">// ← 整個 techs 陣列被舊存檔覆蓋，新科技消失</span></div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">const</span> defaultTechs = gameState.techs;
+gameState = { ...gameState, ...tempSaveData };
+<span class="cmt">// 用 id 合併，保留舊等級，補齊新科技</span>
+gameState.techs = defaultTechs.<span class="fn">map</span>(newTech => {
+  <span class="kw">const</span> saved = tempSaveData.techs?.<span class="fn">find</span>(t => t.id === newTech.id);
+  <span class="kw">return</span> saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
+});</div>
+        </div>
+      </div>
+
+      <!-- Change 3 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 3</span>
+          <strong>讀檔訊息顯示來源</strong>
+          <span class="location">function loadSavedGame()</span>
+        </div>
+        <div class="change-body">
+          <p>聊天框顯示存檔是從「雲端」或「本機」載入，方便確認目前使用的存檔來源。</p>
+          <div class="code-block"><span class="kw">const</span> loadSource = (userId && db) ? <span class="str">'雲端'</span> : <span class="str">'本機'</span>;
+<span class="fn">addChatMessage</span>(<span class="str">"系統"</span>, `成功從${loadSource}載入圓頂進度！`, <span class="str">"system"</span>);</div>
+        </div>
+      </div>
+
+      <hr>
+      <h3>💾 存檔機制修復（3 處）</h3>
+
+      <!-- Change 4 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 4</span>
+          <strong>saveGame — 雙寫 localStorage</strong>
+          <span class="location">async function saveGame()</span>
+        </div>
+        <div class="change-body">
+          <p>每次存檔先寫入 localStorage，再嘗試 Firebase。Gemini Canvas 下會雙備份，其他環境至少有 localStorage。</p>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">async function</span> <span class="fn">saveGame</span>() {
+  <span class="kw">const</span> data = <span class="fn">JSON.stringify</span>(gameState);
+  <span class="cmt">// 永遠備份到 localStorage</span>
+  <span class="kw">try</span> { localStorage.<span class="fn">setItem</span>(<span class="str">'sea_life_save_v1'</span>, data); } <span class="kw">catch</span>(e) {}
+  <span class="cmt">// 若有 Firebase，同步到雲端</span>
+  <span class="kw">if</span> (!userId || !db) <span class="kw">return</span>;
+  ...
+}</div>
+        </div>
+      </div>
+
+      <!-- Change 5 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 5</span>
+          <strong>checkSave — localStorage fallback</strong>
+          <span class="location">async function checkSave()</span>
+        </div>
+        <div class="change-body">
+          <p>讀檔時先嘗試 Firebase，失敗或不存在時自動 fallback 到 localStorage，讀到存檔就顯示 Modal，都沒有才開新遊戲。</p>
+          <div class="flow">
+            <div class="flow-step">頁面載入</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step highlight">checkSave()</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">有 Firebase？</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">是：讀雲端</div>
+          </div>
+          <div class="flow">
+            <div class="flow-step" style="opacity:0; pointer-events:none">頁面載入</div>
+            <div class="flow-arrow" style="opacity:0">→</div>
+            <div class="flow-step" style="opacity:0; pointer-events:none">x</div>
+            <div class="flow-arrow" style="opacity:0">→</div>
+            <div class="flow-step">無 Firebase？</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">讀 localStorage</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">找不到？開新遊戲</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change 6 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num">改動 6</span>
+          <strong>window.onload — 補呼叫 checkSave</strong>
+          <span class="location">window.onload = () => { ... }</span>
+        </div>
+        <div class="change-body">
+          <p>原本 checkSave() 只在 Firebase 認證成功後才觸發。加這行讓沒有 Firebase 的環境也能正確執行讀檔流程。</p>
+          <div class="code-block"><span class="cmt">// Firebase 未就緒時（本機 / GAS），直接用 localStorage 讀檔</span>
+<span class="kw">if</span> (!db) { <span class="fn">checkSave</span>(); }</div>
+        </div>
+      </div>
+
+      <hr>
+      <h3>📥📤 跨瀏覽器匯出／匯入（2 處）</h3>
+
+      <!-- Change 7 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num purple">改動 7</span>
+          <strong>HTML Header 加入兩個按鈕</strong>
+          <span class="location">header 音樂按鈕旁</span>
+        </div>
+        <div class="change-body">
+          <p>在音樂按鈕旁新增兩個小按鈕，樣式與現有按鈕一致，不影響主要操作區域。</p>
+          <div class="code-block"><span class="cmt">&lt;!-- 匯出 --&gt;</span>
+&lt;button onclick=<span class="str">"exportSave()"</span>&gt;📥 匯出存檔&lt;/button&gt;
+
+<span class="cmt">&lt;!-- 匯入（隱藏 input + 觸發按鈕）--&gt;</span>
+&lt;input type=<span class="str">"file"</span> id=<span class="str">"save-import"</span> accept=<span class="str">".json"</span> class=<span class="str">"hidden"</span>
+       onchange=<span class="str">"importSave(event)"</span>&gt;
+&lt;button onclick=<span class="str">"document.getElementById('save-import').click()"</span>&gt;
+  📤 匯入存檔
+&lt;/button&gt;</div>
+        </div>
+      </div>
+
+      <!-- Change 8 -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num purple">改動 8</span>
+          <strong>exportSave() / importSave() 函數</strong>
+          <span class="location">JS — 新增函數</span>
+        </div>
+        <div class="change-body">
+          <p><strong>exportSave()</strong>：把目前 gameState 序列化成 JSON 並觸發瀏覽器下載，檔名含天數（如 <code>海中圓頂_第5天_存檔.json</code>）。</p>
+          <p><strong>importSave()</strong>：讀取 .json 檔後執行與 loadSavedGame 相同的 migration 邏輯，還原後同時寫入 localStorage 並更新畫面。含錯誤提示、重置 input 以允許重複匯入。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Section 3: Maintenance -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">THREE</span>
+      <h2>後續維護說明</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="tip-box green">
+        <h4>✅ 新增欄位（安全，照做即可）</h4>
+        <p>直接在 <code>gameState</code> 初始物件加新欄位並給預設值。<br>
+        <code>{ ...gameState, ...tempSaveData }</code> 的機制確保新欄位保留預設值，舊存檔讀入後自動補上。</p>
+        <div class="code-block" style="margin-top:0.5rem;">gameState = {
+  saveVersion: <span class="num">2</span>,
+  day: <span class="num">1</span>,
+  newFeature: <span class="kw">false</span>,  <span class="cmt">// ← 直接加，舊存檔自動補預設值</span>
+  ...</div>
+      </div>
+
+      <div class="tip-box green">
+        <h4>✅ 新增科技（安全，照做即可）</h4>
+        <p>直接在 <code>techs</code> 陣列加新項目，改動 2 的 id 合併邏輯會自動處理：舊玩家讀檔後看到新科技且等級為 0，舊科技等級完整保留。</p>
+        <div class="code-block" style="margin-top:0.5rem;">techs: [
+  { id: <span class="str">'tourism'</span>, ... },
+  { id: <span class="str">'garden'</span>,  ... },
+  { id: <span class="str">'space'</span>,   ... },
+  { id: <span class="str">'newtech'</span>, name: <span class="str">'新科技'</span>, lv: <span class="num">0</span>, cost: <span class="num">800</span>, desc: <span class="str">'...'</span> }, <span class="cmt">// ← 直接加</span>
+]</div>
+      </div>
+
+      <div class="tip-box yellow">
+        <h4>⚠️ 重新命名欄位（需加 migration）</h4>
+        <p>在 <code>loadSavedGame()</code> 的 spread 行之前加轉換邏輯：</p>
+        <div class="code-block" style="margin-top:0.5rem;"><span class="cmt">// 範例：舊欄位 coins → 新欄位 dreamCoins</span>
+<span class="kw">if</span> (tempSaveData.coins !== <span class="kw">undefined</span> && tempSaveData.dreamCoins === <span class="kw">undefined</span>) {
+  tempSaveData.dreamCoins = tempSaveData.coins;
+  <span class="kw">delete</span> tempSaveData.coins;
+}</div>
+      </div>
+
+      <div class="tip-box blue">
+        <h4>🔧 重大改版（需升版號）</h4>
+        <p>結構大幅改動時，把 <code>saveVersion</code> 改為 3，並在 <code>loadSavedGame()</code> 加版本判斷：</p>
+        <div class="code-block" style="margin-top:0.5rem;"><span class="kw">if</span> (!tempSaveData.saveVersion || tempSaveData.saveVersion < <span class="num">3</span>) {
+  <span class="cmt">// v1/v2 → v3 的 migration 邏輯</span>
+  tempSaveData.residents = tempSaveData.residents.<span class="fn">map</span>(r => ({
+    ...r, newField: <span class="str">'default'</span>
+  }));
+}</div>
+      </div>
+
+      <div class="tip-box green">
+        <h4>✅ 新增商店商品或裝潢（安全，完全不影響存檔）</h4>
+        <ul>
+          <li><code>shopItemsData</code> 和 <code>mashaItemsData</code> 是程式碼端定義，<strong>不存入存檔</strong></li>
+          <li>加新藍圖：直接加到 <code>shopItemsData</code> 陣列即可</li>
+          <li>加新裝潢：直接加到 <code>mashaItemsData</code> 陣列即可</li>
+        </ul>
+      </div>
+
+      <div class="tip-box purple">
+        <h4>📥📤 跨瀏覽器換機流程</h4>
+        <ul>
+          <li>在目前瀏覽器點「📥 匯出存檔」→ 下載 <code>海中圓頂_第X天_存檔.json</code></li>
+          <li>到新瀏覽器 / 新裝置開啟遊戲</li>
+          <li>點「📤 匯入存檔」→ 選剛才下載的 .json 檔</li>
+          <li>遊戲自動還原，同時也寫入新環境的 localStorage</li>
+        </ul>
+        <p style="margin-top:0.5rem; font-size:0.8rem; color:#7c3aed;"><strong>⚠️ localStorage Key 升版提醒</strong>：
+        目前使用 <code>sea_life_save_v1</code>。若日後做不相容的大改版，換成 <code>sea_life_save_v2</code> 以避免讀到格式錯誤的舊存檔。</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    Sea_Life_20260519_noBase64.html &nbsp;|&nbsp; 分析報告 v2 &nbsp;|&nbsp; 2026-05-21
+  </div>
+
+</div>
+</body>
+</html>
