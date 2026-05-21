@@ -8,12 +8,18 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         
+        html {
+            overflow-x: hidden;
+            width: 100%;
+        }
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #fffafa;
             color: #0f172a; /* Slate 950 - 優雅深藍 */
             overflow-x: hidden;
             margin: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .sakura-petal {
@@ -74,17 +80,16 @@
     </style>
 </head>
 <body class="min-h-screen relative">
-    <!-- ↓↓↓ 請在這裡貼上你的音樂 Base64 字串 ↓↓↓ -->
     <audio id="bgm" loop src="data:audio/mp3;base64,這裡是Base64完整放置的地方"></audio>
     <div id="paw-bg"></div>
 
-    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8 relative z-20">
+    <div id="app" class="w-full max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-8 relative z-20">
         <header class="flex flex-col md:flex-row justify-between items-center mb-10 bg-white/95 backdrop-blur-md p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-pink-100">
-            <div class="flex items-center gap-8">
+            <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 w-full md:w-auto">
                 <div class="bg-slate-950 p-5 rounded-[2rem] text-white text-4xl shadow-lg shadow-slate-200">🏰</div>
-                <div>
+                <div class="text-center md:text-left">
                     <h1 class="text-3xl md:text-4xl font-black text-slate-950 mb-2 tracking-tighter">海中圓頂 夢想生活</h1>
-                    <div class="text-slate-500 font-bold flex flex-wrap items-center gap-4 text-sm">
+                    <div class="text-slate-500 font-bold flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm">
                         <span class="text-pink-500 font-black px-3 py-1 bg-pink-50 rounded-full">第 <span id="day-count">1</span> 天</span>
                         <span id="pop-status" class="text-slate-950 font-black">人口: 0/5</span>
                         <button onclick="toggleMusic()" id="music-btn" class="flex items-center gap-2 text-slate-400 hover:text-pink-500 transition-colors">
@@ -95,15 +100,11 @@
                             📁 載入專屬音樂
                         </button>
                         <button onclick="exportSave()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
-                            📥 匯出
+                            📥 匯出存檔
                         </button>
                         <input type="file" id="save-import" accept=".json" class="hidden" onchange="importSave(event)">
                         <button onclick="document.getElementById('save-import').click()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
-                            📤 匯入
-                        </button>
-                        <!-- 新增的 API 設定按鈕 -->
-                        <button onclick="openSettings()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full transition-colors font-bold border border-indigo-100">
-                            ⚙️ API設定
+                            📤 匯入存檔
                         </button>
                     </div>
                 </div>
@@ -181,10 +182,10 @@
         <div class="bg-white w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl border-[4px] border-indigo-100 relative overflow-hidden">
             <button onclick="closeNews()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
             <h2 class="text-3xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                <span class="text-4xl">📰</span> 圓頂日報 <span id="news-badge" class="text-sm font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">圓頂快訊</span>
+                <span class="text-4xl">📰</span> 圓頂日報 <span class="text-sm font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">由 AI 記者採訪</span>
             </h2>
             <div id="news-content" class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 min-h-[150px] font-bold text-slate-700 text-lg">
-                <!-- AI 或隨機生成的新聞內容 -->
+                <!-- AI 生成的新聞內容 -->
             </div>
         </div>
     </div>
@@ -356,6 +357,8 @@
                         <input type="text" id="res-name" placeholder="輸入名字..." class="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-pink-100 font-black text-slate-950 text-lg transition-all">
                     </div>
 
+                    <!-- AI 鑑定功能已移除 -->
+
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">職業專長</label>
                         <select id="res-job" class="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-pink-100 font-black text-slate-950 text-base appearance-none cursor-pointer">
@@ -412,82 +415,16 @@
         </div>
     </div>
 
-    <!-- API 設定 Modal (新增) -->
-    <div id="settings-modal" class="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
-        <div class="bg-white rounded-[2rem] p-8 shadow-2xl max-w-md w-full border border-slate-100 relative">
-            <button onclick="closeSettings()" class="absolute top-6 right-6 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
-            <h3 class="text-2xl font-black text-slate-900 mb-2">⚙️ API 存取設定</h3>
-            <p class="text-xs text-slate-500 font-bold mb-6">為保護開發者額度，目前系統採用「內建隨機題庫」。您可在此輸入自己的金鑰解鎖真正的 AI 功能！</p>
-            
-            <div class="mb-6">
-                <label class="block text-xs font-bold text-slate-500 mb-2">Gemini API Key (選填)</label>
-                <input type="password" id="api-key-input" placeholder="填入 AIzaSy 開頭的金鑰..." class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-300 font-mono text-sm">
-                <p class="text-[10px] text-slate-400 mt-2">您的金鑰絕對安全，僅會保存在您自己的本機瀏覽器中。留空則自動使用內建題庫。</p>
-            </div>
-            
-            <div class="flex gap-4">
-                <button onclick="saveSettings()" class="flex-1 bg-slate-950 text-white py-3 rounded-xl font-black hover:bg-slate-800 transition-all">儲存並套用</button>
-            </div>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ================= API 設定邏輯 =================
-        let userApiKey = localStorage.getItem('seaLife_apiKey') || "";
-
-        function openSettings() {
-            document.getElementById('api-key-input').value = userApiKey;
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-        function closeSettings() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-        function saveSettings() {
-            const inputVal = document.getElementById('api-key-input').value.trim();
-            if (inputVal) {
-                userApiKey = inputVal;
-                localStorage.setItem('seaLife_apiKey', userApiKey);
-                showMessage("✅ API Key 已儲存！\n接下來您將體驗到真正的 AI 新聞與對話內容。");
-            } else {
-                userApiKey = "";
-                localStorage.removeItem('seaLife_apiKey');
-                showMessage("✅ 已清除 API Key。\n系統將自動為您切換回「內建隨機題庫」模式，依然可以繼續遊玩喔！");
-            }
-            closeSettings();
-        }
-
-        // ================= 內建隨機題庫 (無金鑰時使用) =================
-        const fallbackNews = [
-            "🌸 櫻花季持續進行中！居民表示：「每天看到櫻花飄落在海中，心情都變好了呢喵～」",
-            "🛠️ 建築工地的敲打聲成為了圓頂最新的 ASMR。有居民甚至每天去工地旁野餐，表示十分療癒。",
-            "🐟 昨晚有不明發光魚群在圓頂外游蕩，引發居民熱烈圍觀，甚至有人試圖透過玻璃與他們對話！",
-            "💎 夢想幣 (DC) 的匯率今日保持穩定。商店老闆 boss 表示近期的消費力道相當強勁，尤其是瑪莎的店！",
-            "🎉 據說有位熱心的居民偷偷在準備一個驚喜派對，為了慶祝圓頂的新設施落成，請大家拭目以待！",
-            "☕ 櫻花咖啡廳的特調「海帶拿鐵」再度售罄！店長呼籲大家明天請早，或者考慮點杯純淨海水。",
-            "🐾 圓頂內的步道上發現了大量神秘的肉球印記，目前推測是某位熱情居民半夜夜跑的傑作。",
-            "🌊 專家指出，圓頂外圍的海流近日較為強勁，但圓頂內部依然溫暖如春，請居民們安心睡午覺。"
-        ];
-
-        const fallbackChats = [
-            "今天的天氣真適合睡午覺...",
-            "你看到剛才游過去的那隻大烏賊了嗎？超壯觀！",
-            "不知道今天的晚餐吃什麼好呢？想要吃滿滿海鮮的特製披薩！",
-            "櫻花落在海裡的樣子，不管看幾次都很夢幻呢，對吧？",
-            "老闆娘瑪莎今天又在推銷新的裝潢了，我的錢包啊...",
-            "真希望能有更多新鄰居搬進來熱鬧熱鬧！這裡空房還很多呢！",
-            "最近的工作真是辛苦了，大家一起加油吧！為了更好的圓頂！",
-            "聽說如果把發光海星放在床頭，晚上就不會作惡夢喔！",
-            "今天我在廣場散步的時候，好像聽到了奇怪的喵喵聲...",
-            "設計師昨天幫我弄的新家超棒的！我整個週末都不想出門了。"
-        ];
+        const apiKey = "AIzaSyAj6z4Ka-8EMUhr2xtZ6E8RFo0ARXrjt0g"; 
 
         // 帶有重試機制與錯誤處理的 API 呼叫函數
-        async function fetchWithRetry(url, payload, retries = 3) {
-            const delays = [1000, 2000, 4000];
+        async function fetchWithRetry(url, payload, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i < retries; i++) {
                 try {
                     const res = await fetch(url, {
@@ -504,29 +441,10 @@
             }
         }
 
-        // 雲端與單機存檔初始化設定
+        // 雲端存檔初始化設定
         let db, auth, userId;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let tempSaveData = null;
 
-        // 檢查單機(localStorage)存檔的功能
-        function checkLocalSave() {
-            try {
-                const localData = localStorage.getItem('seaLifeSaveData');
-                if (localData) {
-                    tempSaveData = JSON.parse(localData);
-                    document.getElementById('save-info').innerText = `[單機紀錄] 第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
-                    document.getElementById('start-modal').classList.remove('hidden');
-                } else {
-                    startNewGame(false);
-                }
-            } catch (e) {
-                console.error("讀取單機存檔失敗：", e);
-                startNewGame(false);
-            }
-        }
-
-        // 雲端與單機判斷機制
         try {
             const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
             if (firebaseConfig) {
@@ -551,120 +469,53 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        await checkSave(); // 有雲端則檢查雲端
+                        await checkSave(); 
                     }
                 });
-            } else {
-                console.warn("未偵測到雲端設定檔，已自動切換為單機存檔模式 (localStorage)。");
-                checkLocalSave(); 
             }
         } catch (error) {
-            console.warn("雲端環境尚未準備好，切換為單機存檔模式。", error);
-            checkLocalSave();
+            console.warn("雲端環境尚未準備好，目前使用單機模式。", error);
         }
+
+        let tempSaveData = null;
 
         async function checkSave() {
-            if (!userId || !db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists() && docSnap.data().saveData) {
-                    tempSaveData = JSON.parse(docSnap.data().saveData);
-                    document.getElementById('save-info').innerText = `[雲端紀錄] 第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
-                    document.getElementById('start-modal').classList.remove('hidden');
-                } else {
-                    startNewGame(false);
-                }
-            } catch (e) {
-                console.error("檢查雲端存檔失敗：", e);
-                startNewGame(false);
-            }
-        }
-
-        async function saveGame() {
+            // 優先使用 Firebase
             if (userId && db) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
-                    await setDoc(docRef, {
-                        saveData: JSON.stringify(gameState)
-                    });
-                    console.log("遊戲進度已完整儲存到雲端！");
-                } catch (error) {
-                    console.error("儲存雲端進度失敗：", error);
-                }
-            } else {
-                try {
-                    localStorage.setItem('seaLifeSaveData', JSON.stringify(gameState));
-                    console.log("遊戲進度已儲存到單機瀏覽器 (localStorage)！");
-                } catch (error) {
-                    console.error("單機存檔失敗，可能是瀏覽器不允許存取 localStorage：", error);
-                }
-            }
-        }
-
-        function exportSave() {
-            if (gameState.day === 1 && gameState.residents.length === 0) {
-                showMessage('目前沒有存檔可以匯出喔！請先開始遊戲。');
-                return;
-            }
-            const data = JSON.stringify(gameState, null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `海中圓頂_第${gameState.day}天_存檔.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showMessage(`📥 存檔已匯出！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人\n\n可以在其他瀏覽器或裝置用「匯入」讀取。`);
-        }
-
-        function importSave(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    // 基礎 migration
-                    if (!data.blueprints) data.blueprints = [];
-                    if (data.bossJoined === undefined) data.bossJoined = data.baoxiJoined || false;
-                    if (data.mashaJoined === undefined) data.mashaJoined = false;
-                    if (!data.buildings) data.buildings = [];
-                    if (!data.decorations) data.decorations = {};
-                    if (!data.roadLines) data.roadLines = [];
-                    data.buildings = data.buildings.filter(b => b.bpId !== 'bp_road');
-                    data.buildings.forEach(b => {
-                        if (b.resident && !b.decoration) b.decoration = '經典風裝潢';
-                    });
-                    const defaultTechs = gameState.techs;
-                    gameState = { ...gameState, ...data };
-                    gameState.techs = defaultTechs.map(newTech => {
-                        const saved = data.techs?.find(t => t.id === newTech.id);
-                        return saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
-                    });
-                    saveGame();
-                    redrawRoads();
-                    updateUI();
-                    if (gameState.residents.length > 0) {
-                        document.getElementById('chat-container').innerHTML = '';
-                        addChatMessage("系統", `存檔匯入成功！目前第 ${gameState.day} 天。`, "system");
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists() && docSnap.data().saveData) {
+                        tempSaveData = JSON.parse(docSnap.data().saveData);
+                        document.getElementById('save-info').innerText = `紀錄：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
+                        document.getElementById('start-modal').classList.remove('hidden');
+                        return;
                     }
-                    showMessage(`✅ 存檔匯入成功！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人`);
-                } catch (err) {
-                    showMessage('❌ 存檔格式錯誤，無法匯入！\n請確認是由本遊戲匯出的 .json 檔案。');
+                } catch (e) {
+                    console.error("Firebase 讀取失敗：", e);
                 }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
+            }
+            // Fallback：嘗試 localStorage（本機 / GAS 環境）
+            try {
+                const local = localStorage.getItem('sea_life_save_v1');
+                if (local) {
+                    tempSaveData = JSON.parse(local);
+                    document.getElementById('save-info').innerText = `紀錄（本機）：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
+                    document.getElementById('start-modal').classList.remove('hidden');
+                    return;
+                }
+            } catch (e) {}
+            startNewGame(false);
         }
 
+        // 專門用來繪製直線道路的函數
         function redrawRoads(tempLine = null) {
             const rc = document.getElementById('road-canvas');
             if(!rc) return;
             const ctx = rc.getContext('2d');
             ctx.clearRect(0, 0, rc.width, rc.height);
 
+            // 為了相容超早期的舊存檔（如果有的話）
             if (gameState.roadData && (!gameState.roadLines || gameState.roadLines.length === 0)) {
                 const img = new Image();
                 img.onload = () => ctx.drawImage(img, 0, 0);
@@ -712,19 +563,21 @@
 
                 const defaultTechs = gameState.techs;
                 gameState = { ...gameState, ...tempSaveData };
+                // 用 id 合併科技樹，確保新版新增的科技對舊存檔也可見
                 gameState.techs = defaultTechs.map(newTech => {
                     const saved = tempSaveData.techs?.find(t => t.id === newTech.id);
                     return saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
                 });
-                
+
                 document.getElementById('start-modal').classList.add('hidden');
-                
+
                 redrawRoads();
                 updateUI();
 
+                const loadSource = (userId && db) ? '雲端' : '本機';
                 if (gameState.residents.length > 0) {
                     document.getElementById('chat-container').innerHTML = '';
-                    addChatMessage("系統", `成功載入圓頂進度！目前第 ${gameState.day} 天。`, "system");
+                    addChatMessage("系統", `成功從${loadSource}載入圓頂進度！目前第 ${gameState.day} 天。`, "system");
                 }
             }
         }
@@ -743,7 +596,23 @@
             updateUI();
         }
 
+        async function saveGame() {
+            const data = JSON.stringify(gameState);
+            // 永遠備份到 localStorage（供本機與 GAS 環境使用）
+            try { localStorage.setItem('sea_life_save_v1', data); } catch(e) {}
+            // 若有 Firebase，同步到雲端
+            if (!userId || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
+                await setDoc(docRef, { saveData: data });
+                console.log("遊戲進度已儲存到雲端與本機！");
+            } catch (error) {
+                console.error("雲端儲存失敗：", error);
+            }
+        }
+
         let gameState = {
+            saveVersion: 2,
             day: 1,
             coins: 1000,
             residents: [],
@@ -764,6 +633,7 @@
             mashaJoined: false 
         };
 
+        // 房屋大小統一調大 25% (數值放大 1.25 倍)
         const shopItemsData = [
             { id: 'bp_road', type: 'blueprint', name: '小步道藍圖', price: 10, icon: '🛤️', desc: '解鎖步道鋪設功能。選擇後在圓頂內滑動，自動畫出筆直水平或垂直的街道。', minArch: 0, points: 0, size: 8, livable: false, isCommercial: false },
             { id: 'bp_basic', type: 'blueprint', name: '溫馨小屋藍圖', price: 500, icon: '🏠', desc: '基礎居住單位。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 2, size: 15, livable: true, isCommercial: false },
@@ -843,11 +713,67 @@
             }
         }
 
+        function exportSave() {
+            if (gameState.day === 1 && gameState.residents.length === 0) {
+                showMessage('目前沒有存檔可以匯出喔！請先開始遊戲。');
+                return;
+            }
+            const data = JSON.stringify(gameState, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `海中圓頂_第${gameState.day}天_存檔.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showMessage(`📥 存檔已匯出！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人\n\n可以在其他瀏覽器或裝置用「匯入存檔」讀取。`);
+        }
+
+        function importSave(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    // 同 loadSavedGame 的 migration 邏輯，確保舊存檔相容
+                    if (!data.blueprints) data.blueprints = [];
+                    if (data.bossJoined === undefined) data.bossJoined = data.baoxiJoined || false;
+                    if (data.mashaJoined === undefined) data.mashaJoined = false;
+                    if (!data.buildings) data.buildings = [];
+                    if (!data.decorations) data.decorations = {};
+                    if (!data.roadLines) data.roadLines = [];
+                    data.buildings = data.buildings.filter(b => b.bpId !== 'bp_road');
+                    data.buildings.forEach(b => {
+                        if (b.resident && !b.decoration) b.decoration = '經典風裝潢';
+                    });
+                    const defaultTechs = gameState.techs;
+                    gameState = { ...gameState, ...data };
+                    gameState.techs = defaultTechs.map(newTech => {
+                        const saved = data.techs?.find(t => t.id === newTech.id);
+                        return saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
+                    });
+                    saveGame();
+                    redrawRoads();
+                    updateUI();
+                    if (gameState.residents.length > 0) {
+                        document.getElementById('chat-container').innerHTML = '';
+                        addChatMessage("系統", `存檔匯入成功！目前第 ${gameState.day} 天。`, "system");
+                    }
+                    showMessage(`✅ 存檔匯入成功！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人`);
+                } catch (err) {
+                    showMessage('❌ 存檔格式錯誤，無法匯入！\n請確認是由本遊戲匯出的 .json 檔案。');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
         function toggleMusic() {
             const bgm = document.getElementById('bgm');
             
             if (!bgm.src || bgm.src.endsWith(window.location.pathname)) {
-                showMessage("請先點擊「載入專屬音樂」按鈕，選擇您的音樂檔案！\n或者直接在 HTML 程式碼中貼上 Base64 格式。");
+                showMessage("請先點擊「載入專屬音樂」按鈕，選擇您的音樂檔案！");
                 return;
             }
 
@@ -907,6 +833,7 @@
             canvas.addEventListener('touchend', handleEnd);
         }
 
+        // 新版：直線與吸附道路繪製系統
         function initRoadCanvas() {
             const rc = document.getElementById('road-canvas');
             if(!rc) return;
@@ -933,9 +860,10 @@
                 drawingRoad = true;
                 const pos = getPos(e);
                 
+                // 尋找最近的端點來自動吸附
                 let snapX = pos.x;
                 let snapY = pos.y;
-                let snapDist = 30;
+                let snapDist = 30; // 靠近30像素以內自動吸附
 
                 if (gameState.roadLines) {
                     gameState.roadLines.forEach(line => {
@@ -953,15 +881,16 @@
                 if (!drawingRoad || selectedBlueprintToBuild !== 'bp_road') return;
                 const pos = getPos(e);
                 
+                // 強制畫直線 (自動校正水平或垂直)
                 const dx = pos.x - currentLine.x1;
                 const dy = pos.y - currentLine.y1;
                 
                 if (Math.abs(dx) > Math.abs(dy)) {
                     currentLine.x2 = pos.x;
-                    currentLine.y2 = currentLine.y1; 
+                    currentLine.y2 = currentLine.y1; // 水平線
                 } else {
                     currentLine.x2 = currentLine.x1;
-                    currentLine.y2 = pos.y; 
+                    currentLine.y2 = pos.y; // 垂直線
                 }
 
                 redrawRoads(currentLine);
@@ -971,6 +900,7 @@
             const end = () => {
                 if (drawingRoad && currentLine) {
                     drawingRoad = false;
+                    // 如果長度大於5才儲存，避免不小心點一下產生無效小圓點
                     const dist = Math.sqrt((currentLine.x2 - currentLine.x1)**2 + (currentLine.y2 - currentLine.y1)**2);
                     if (dist > 5) {
                         if (!gameState.roadLines) gameState.roadLines = [];
@@ -1051,25 +981,14 @@
                 systemInstruction: { parts: [{ text: "你是一個幽默活潑的海底小鎮記者。" }] }
             };
 
-            // 如果有填寫有效的 API Key，嘗試呼叫真正的 AI
-            if (userApiKey) {
-                try {
-                    const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, payload);
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
-                    document.getElementById('news-badge').innerText = "由 AI 記者採訪";
-                    document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
-                    return; // 成功呼叫則結束函數
-                } catch(e) {
-                    console.error("AI 呼叫失敗，將為您切換至隨機題庫", e);
-                }
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, payload);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
+                document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
+            } catch(e) {
+                console.error(e);
+                document.getElementById('news-content').innerHTML = '<p class="text-red-500 text-center py-6 font-bold">報社記者遇到了一點亂流罷工了，請稍後再試！</p>';
             }
-
-            // 無 API Key 或 呼叫失敗時的退路 (Fallback)
-            document.getElementById('news-badge').innerText = "圓頂隨機快訊";
-            setTimeout(() => {
-                const randomNews = fallbackNews[Math.floor(Math.random() * fallbackNews.length)];
-                document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">【圓頂快訊】<br><br>${randomNews}</p>`;
-            }, 600); // 稍微延遲假裝在打字
         }
 
         function closeNews() {
@@ -1692,47 +1611,27 @@
             3. 對話格式嚴格為「姓名: 內容」。
             4. 內容要溫馨、帶點貓咪般的輕快感。`;
 
-            // 有填寫金鑰時，嘗試呼叫真正的 AI 生成對話
-            if (userApiKey) {
-                try {
-                    const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, {
-                        contents: [{parts:[{text: prompt}]}]
-                    });
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                    const lines = text.split('\n').filter(l => l.includes(':'));
-                    lines.forEach((l, i) => {
-                        const [n, c] = l.split(':');
-                        setTimeout(() => {
-                            addChatMessage(n.trim(), c.trim());
-                            triggerRandomGift();
-                        }, i * 900);
-                    });
-                    return; // 成功呼叫則結束函數
-                } catch(e) {
-                    console.error("AI 對話生成失敗，將為您切換至隨機題庫", e);
-                }
-            }
-
-            // 退路：從隨機題庫中抓取句子，並分配給現有居民
-            const chatCount = Math.min(gameState.residents.length, 3) + Math.floor(Math.random() * 2);
-            for (let i = 0; i < chatCount; i++) {
-                setTimeout(() => {
-                    const randomRes = gameState.residents[Math.floor(Math.random() * gameState.residents.length)];
-                    const randomText = fallbackChats[Math.floor(Math.random() * fallbackChats.length)];
-                    addChatMessage(randomRes.name, randomText);
-                    triggerRandomGift();
-                }, i * 900);
-            }
-        }
-
-        // 把禮物觸發邏輯獨立出來，方便重複利用
-        function triggerRandomGift() {
-            if (Math.random() < 0.25) {
-                const items = ["晶透珍珠", "五彩貝殼", "海中櫻花葉", "發光海星"];
-                const gift = items[Math.floor(Math.random()*items.length)];
-                gameState.inventory[gift] = (gameState.inventory[gift] || 0) + 1;
-                updateUI();
-                saveGame(); 
+            try {
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    contents: [{parts:[{text: prompt}]}]
+                });
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const lines = text.split('\n').filter(l => l.includes(':'));
+                lines.forEach((l, i) => {
+                    const [n, c] = l.split(':');
+                    setTimeout(() => {
+                        addChatMessage(n.trim(), c.trim());
+                        if (Math.random() < 0.25) {
+                            const items = ["晶透珍珠", "五彩貝殼", "海中櫻花葉", "發光海星"];
+                            const gift = items[Math.floor(Math.random()*items.length)];
+                            gameState.inventory[gift] = (gameState.inventory[gift] || 0) + 1;
+                            updateUI();
+                            saveGame(); 
+                        }
+                    }, i * 900);
+                });
+            } catch(e) {
+                addChatMessage(gameState.residents[0].name, "今天的圓頂，也充滿著櫻花的香氣。");
             }
         }
 
@@ -1917,9 +1816,6 @@
             }
         }
 
-        window.openSettings = openSettings;
-        window.closeSettings = closeSettings;
-        window.saveSettings = saveSettings;
         window.exportSave = exportSave;
         window.importSave = importSave;
         window.closeMessage = closeMessage;
@@ -1962,6 +1858,8 @@
             createPaws();
             setInterval(createSakura, 2000);
             updateUI();
+            // Firebase 未就緒時（本機 / GAS），直接用 localStorage 讀檔
+            if (!db) { checkSave(); }
             console.log("海中圓頂 夢想生活 已載入。");
         };
     </script>
