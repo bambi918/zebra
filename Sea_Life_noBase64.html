@@ -93,6 +93,13 @@
                         <button onclick="document.getElementById('music-upload').click()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
                             📁 載入專屬音樂
                         </button>
+                        <button onclick="exportSave()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
+                            📥 匯出存檔
+                        </button>
+                        <input type="file" id="save-import" accept=".json" class="hidden" onchange="importSave(event)">
+                        <button onclick="document.getElementById('save-import').click()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
+                            📤 匯入存檔
+                        </button>
                     </div>
                 </div>
             </div>
@@ -698,6 +705,62 @@
                     showMessage("專屬音樂載入成功！請點擊「音樂: 關閉」按鈕來開始播放。");
                 });
             }
+        }
+
+        function exportSave() {
+            if (gameState.day === 1 && gameState.residents.length === 0) {
+                showMessage('目前沒有存檔可以匯出喔！請先開始遊戲。');
+                return;
+            }
+            const data = JSON.stringify(gameState, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `海中圓頂_第${gameState.day}天_存檔.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showMessage(`📥 存檔已匯出！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人\n\n可以在其他瀏覽器或裝置用「匯入存檔」讀取。`);
+        }
+
+        function importSave(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    // 同 loadSavedGame 的 migration 邏輯，確保舊存檔相容
+                    if (!data.blueprints) data.blueprints = [];
+                    if (data.bossJoined === undefined) data.bossJoined = data.baoxiJoined || false;
+                    if (data.mashaJoined === undefined) data.mashaJoined = false;
+                    if (!data.buildings) data.buildings = [];
+                    if (!data.decorations) data.decorations = {};
+                    if (!data.roadLines) data.roadLines = [];
+                    data.buildings = data.buildings.filter(b => b.bpId !== 'bp_road');
+                    data.buildings.forEach(b => {
+                        if (b.resident && !b.decoration) b.decoration = '經典風裝潢';
+                    });
+                    const defaultTechs = gameState.techs;
+                    gameState = { ...gameState, ...data };
+                    gameState.techs = defaultTechs.map(newTech => {
+                        const saved = data.techs?.find(t => t.id === newTech.id);
+                        return saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
+                    });
+                    saveGame();
+                    redrawRoads();
+                    updateUI();
+                    if (gameState.residents.length > 0) {
+                        document.getElementById('chat-container').innerHTML = '';
+                        addChatMessage("系統", `存檔匯入成功！目前第 ${gameState.day} 天。`, "system");
+                    }
+                    showMessage(`✅ 存檔匯入成功！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人`);
+                } catch (err) {
+                    showMessage('❌ 存檔格式錯誤，無法匯入！\n請確認是由本遊戲匯出的 .json 檔案。');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         function toggleMusic() {
@@ -1747,6 +1810,8 @@
             }
         }
 
+        window.exportSave = exportSave;
+        window.importSave = importSave;
         window.closeMessage = closeMessage;
         window.handleMusicUpload = handleMusicUpload;
         window.toggleMusic = toggleMusic;
