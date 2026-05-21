@@ -467,22 +467,32 @@
         let tempSaveData = null;
 
         async function checkSave() {
-            if (!userId || !db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists() && docSnap.data().saveData) {
-                    tempSaveData = JSON.parse(docSnap.data().saveData);
-                    document.getElementById('save-info').innerText = `紀錄：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
-                    document.getElementById('start-modal').classList.remove('hidden');
-                } else {
-                    startNewGame(false);
+            // 優先使用 Firebase
+            if (userId && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists() && docSnap.data().saveData) {
+                        tempSaveData = JSON.parse(docSnap.data().saveData);
+                        document.getElementById('save-info').innerText = `紀錄：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
+                        document.getElementById('start-modal').classList.remove('hidden');
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Firebase 讀取失敗：", e);
                 }
-            } catch (e) {
-                console.error("檢查存檔失敗：", e);
-                startNewGame(false);
             }
+            // Fallback：嘗試 localStorage（本機 / GAS 環境）
+            try {
+                const local = localStorage.getItem('sea_life_save_v1');
+                if (local) {
+                    tempSaveData = JSON.parse(local);
+                    document.getElementById('save-info').innerText = `紀錄（本機）：第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
+                    document.getElementById('start-modal').classList.remove('hidden');
+                    return;
+                }
+            } catch (e) {}
+            startNewGame(false);
         }
 
         // 專門用來繪製直線道路的函數
@@ -538,15 +548,23 @@
                     }
                 });
 
+                const defaultTechs = gameState.techs;
                 gameState = { ...gameState, ...tempSaveData };
+                // 用 id 合併科技樹，確保新版新增的科技對舊存檔也可見
+                gameState.techs = defaultTechs.map(newTech => {
+                    const saved = tempSaveData.techs?.find(t => t.id === newTech.id);
+                    return saved ? { ...newTech, lv: saved.lv, cost: saved.cost } : newTech;
+                });
+
                 document.getElementById('start-modal').classList.add('hidden');
-                
+
                 redrawRoads();
                 updateUI();
 
+                const loadSource = (userId && db) ? '雲端' : '本機';
                 if (gameState.residents.length > 0) {
                     document.getElementById('chat-container').innerHTML = '';
-                    addChatMessage("系統", `成功從雲端載入圓頂進度！目前第 ${gameState.day} 天。`, "system");
+                    addChatMessage("系統", `成功從${loadSource}載入圓頂進度！目前第 ${gameState.day} 天。`, "system");
                 }
             }
         }
@@ -566,19 +584,22 @@
         }
 
         async function saveGame() {
+            const data = JSON.stringify(gameState);
+            // 永遠備份到 localStorage（供本機與 GAS 環境使用）
+            try { localStorage.setItem('sea_life_save_v1', data); } catch(e) {}
+            // 若有 Firebase，同步到雲端
             if (!userId || !db) return;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
-                await setDoc(docRef, {
-                    saveData: JSON.stringify(gameState)
-                });
-                console.log("遊戲進度已完整儲存到雲端！");
+                await setDoc(docRef, { saveData: data });
+                console.log("遊戲進度已儲存到雲端與本機！");
             } catch (error) {
-                console.error("儲存進度失敗：", error);
+                console.error("雲端儲存失敗：", error);
             }
         }
 
         let gameState = {
+            saveVersion: 2,
             day: 1,
             coins: 1000,
             residents: [],
@@ -1766,6 +1787,8 @@
             createPaws();
             setInterval(createSakura, 2000);
             updateUI();
+            // Firebase 未就緒時（本機 / GAS），直接用 localStorage 讀檔
+            if (!db) { checkSave(); }
             console.log("海中圓頂 夢想生活 已載入。");
         };
     </script>
