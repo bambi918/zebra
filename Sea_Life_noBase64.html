@@ -178,12 +178,12 @@
 
     <!-- ✨ 圓頂日報 Modal -->
     <div id="news-modal" class="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl border-[4px] border-indigo-100 relative overflow-hidden">
-            <button onclick="closeNews()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
-            <h2 class="text-3xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                <span class="text-4xl">📰</span> 圓頂日報 <span id="news-badge" class="text-sm font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">圓頂快訊</span>
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] md:rounded-[3rem] max-h-[88vh] overflow-y-auto p-5 md:p-12 shadow-2xl border-[4px] border-indigo-100 relative">
+            <button onclick="closeNews()" class="absolute top-4 right-4 md:top-6 md:right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-10">✕</button>
+            <h2 class="text-xl md:text-3xl font-black text-slate-900 mb-5 md:mb-6 flex flex-wrap items-center gap-2 md:gap-3">
+                <span class="text-2xl md:text-4xl">📰</span> 圓頂日報 <span id="news-badge" class="text-sm font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">圓頂快訊</span>
             </h2>
-            <div id="news-content" class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 min-h-[150px] font-bold text-slate-700 text-lg">
+            <div id="news-content" class="bg-slate-50 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 min-h-[100px] md:min-h-[150px] font-bold text-slate-700 text-base md:text-lg">
                 <!-- AI 或隨機生成的新聞內容 -->
             </div>
         </div>
@@ -414,9 +414,9 @@
 
     <!-- API 設定 Modal (新增) -->
     <div id="settings-modal" class="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
-        <div class="bg-white rounded-[2rem] p-8 shadow-2xl max-w-md w-full border border-slate-100 relative">
-            <button onclick="closeSettings()" class="absolute top-6 right-6 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
-            <h3 class="text-2xl font-black text-slate-900 mb-2">⚙️ API 存取設定</h3>
+        <div class="bg-white rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-8 max-h-[88vh] overflow-y-auto shadow-2xl max-w-md w-full border border-slate-100 relative">
+            <button onclick="closeSettings()" class="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
+            <h3 class="text-xl md:text-2xl font-black text-slate-900 mb-2">⚙️ API 存取設定</h3>
             <p class="text-xs text-slate-500 font-bold mb-6">為保護開發者額度，目前系統採用「內建隨機題庫」。您可在此輸入自己的金鑰解鎖真正的 AI 功能！</p>
             
             <div class="mb-6">
