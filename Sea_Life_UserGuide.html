@@ -36,7 +36,7 @@
 
     <!-- 圖文海報主體 -->
     <div class="poster-bg w-full max-w-4xl rounded-[3rem] shadow-2xl border-8 border-white p-8 md:p-12 z-10">
-        
+
         <!-- 背景氣泡 -->
         <div class="bubble w-32 h-32 top-10 left-10"></div>
         <div class="bubble w-48 h-48 bottom-20 right-10"></div>
@@ -64,10 +64,16 @@
                         <span>🎨</span> 召喚空投（創造居民）
                     </h2>
                     <p class="text-slate-600 font-bold leading-relaxed mb-3">
-                        一開始圓頂是空的！點擊「召喚空投」畫出你的第一位居民。
+                        一開始圓頂是空的！點擊「召喚空投」畫出你的第一位居民，並為他設定名字、職業與性格。
                     </p>
-                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
-                        💡 提示：職業很重要！「建築師」能幫忙蓋房子，「村長」能提供資金。一開始強烈建議至少先畫一位「建築師」喔。
+                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold">
+                        💡 <span class="font-black">5 種職業各有特色：</span><br>
+                        📐 <span class="font-black">建築師</span> — 負責蓋房子，每位建築師每日讓人口上限 +2<br>
+                        🏛️ <span class="font-black">村長</span> — 每日可觸發技能，撥款 500 DC（全局限一位）<br>
+                        🎨 <span class="font-black">室內設計師</span> — 裝潢房屋必備，沒有他住宅無法入住！<br>
+                        ⚒️ <span class="font-black">工匠</span> — 每日技能可製作稀有寶物（深海金屬、古代羅盤）<br>
+                        🏠 <span class="font-black">平民</span> — 提升全體居民的送禮機率<br>
+                        <span class="text-pink-500 mt-2 block">→ 建議先畫一位「建築師」，再畫一位「室內設計師」！</span>
                     </div>
                 </div>
             </div>
@@ -79,13 +85,14 @@
                 </div>
                 <div class="flex-1 text-center md:text-left">
                     <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
-                        <span>🏪</span> 報報商店（購買藍圖）
+                        <span>🏪</span> 逛兩個商店（藍圖 + 裝潢）
                     </h2>
                     <p class="text-slate-600 font-bold leading-relaxed mb-3">
-                        有了居民後，點擊「報報商店」，使用起始的夢想幣 (DC) 購買建築藍圖。
+                        有了居民後，點「<span class="text-pink-600 font-black">報報商店</span>」購買建築藍圖，再去「<span class="text-amber-600 font-black">瑪瑪天地</span>」購買裝潢風格。兩個都要逛！
                     </p>
-                    <div class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
-                        💡 提示：藍圖買一次就能無限次放置。越高級的藍圖，需要的「建築師人數」就越多。
+                    <div class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold">
+                        💡 <span class="font-black">報報商店</span>：藍圖買一次可無限次放置；首棟建築免費，第二棟起需花費藍圖售價的 2/3。<br>
+                        🎀 <span class="font-black">瑪瑪天地</span>：販售 10 種裝潢風格（消耗品，每組 350 DC），以及可邀請「瑪莎」成為居民。
                     </div>
                 </div>
             </div>
@@ -100,10 +107,11 @@
                         <span>📐</span> 設計圓頂（規劃王國）
                     </h2>
                     <p class="text-slate-600 font-bold leading-relaxed mb-3">
-                        點擊「設計圓頂」，選擇你剛買好的藍圖，然後在左側的圓頂畫布上點擊，放置「施工地」。
+                        點擊「設計圓頂」，選擇藍圖後在左側的圓頂畫布上點擊，放置「施工地」。步道藍圖則是選中後直接在畫布上畫線！
                     </p>
-                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
-                        💡 提示：此時建築還只是工地 (🚧)，必須依賴建築師在晚上進行施工才會慢慢蓋好。
+                    <div class="bg-pink-50 text-pink-700 px-4 py-3 rounded-xl text-sm font-bold">
+                        💡 建築放下後只是工地 (🚧)，進度顯示 0%。每天夜晚建築師會自動施工，進度達到 100% 才算落成。<br>
+                        需要幾位建築師由藍圖決定，高級建築可能需要 3～5 名才能開工！
                     </div>
                 </div>
             </div>
@@ -118,10 +126,11 @@
                         <span>🌙</span> 進入結算（日夜交替）
                     </h2>
                     <p class="text-slate-600 font-bold leading-relaxed mb-3">
-                        白天你可以點擊左側居民使用技能。都忙完後，點擊最下方的「進入結算 (隔日)」。
+                        白天可點擊左側「今日可用技能」按鈕讓居民發揮特長。都忙完後，點擊最下方的「進入結算 (隔日)」推進到下一天。
                     </p>
-                    <div class="bg-purple-50 text-purple-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
-                        💡 提示：結算時，建築師會自動去蓋房子。隔天早上你會看到工程進度增加，或者建築落成！
+                    <div class="bg-purple-50 text-purple-700 px-4 py-3 rounded-xl text-sm font-bold">
+                        💡 夜晚有兩個選擇：「<span class="font-black">舉行櫻花派對</span>」提升居民感情，或「<span class="font-black">通宵加強圓頂</span>」獲得 +200 DC。<br>
+                        建築師每天讓人口上限 +2，商業建築（餐廳、飯店、農場等）落成後每日自動產生收益 (300～2000 DC)！
                     </div>
                 </div>
             </div>
@@ -133,13 +142,17 @@
                 </div>
                 <div class="flex-1 text-center md:text-left">
                     <h2 class="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center md:justify-start gap-2">
-                        <span>🏠</span> 安排入住與賺錢
+                        <span>🏠</span> 裝潢 → 入住，才算真正落成！
                     </h2>
                     <p class="text-slate-600 font-bold leading-relaxed mb-3">
-                        房子蓋好後，回到「設計圓頂」點擊該房屋，就能安排居民入住！
+                        住宅類建築落成後，<span class="text-amber-600 font-black">不能直接入住</span>！流程是：在「瑪瑪天地」買裝潢 → 點擊已完工的房屋 → 室內設計師自動施工 → 再次點擊安排居民入住。
                     </p>
-                    <div class="bg-yellow-50 text-yellow-700 px-4 py-3 rounded-xl text-sm font-bold inline-block">
-                        💡 提示：持續推進天數，觀察居民聊天收集物資，或是升級右側「王國科技」來增加你的每日被動收入吧！
+                    <div class="bg-yellow-50 text-yellow-700 px-4 py-3 rounded-xl text-sm font-bold">
+                        💡 <span class="font-black">餐廳、飯店、農場等商業建築</span>落成後直接產生每日收益，無需裝潢入住。<br>
+                        升級左側「<span class="font-black">王國科技</span>」可獲得更多被動收入：<br>
+                        🌸 <span class="font-black">櫻花咖啡廳</span> — 每日 +150 DC（可重複升級）<br>
+                        🐾 <span class="font-black">肉球溫室</span> — 提升居民送禮機率<br>
+                        🔵 <span class="font-black">圓頂擴張工程</span> — 人口上限 +5
                     </div>
                 </div>
             </div>
@@ -148,7 +161,7 @@
 
         <!-- 底部結語 -->
         <div class="mt-12 text-center relative z-10">
-            <p class="text-slate-400 font-bold text-sm">現在就回到遊戲，畫出你的第一位「建築師」吧！</p>
+            <p class="text-slate-400 font-bold text-sm">存檔會自動儲存。也可用頂部的「📥 匯出存檔 / 📤 匯入存檔」在不同瀏覽器間攜帶進度！</p>
         </div>
 
     </div>
