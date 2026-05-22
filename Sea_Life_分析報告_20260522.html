@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海中圓頂 — 技術分析報告 2026-05-22</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* Header */
+  .report-header {
+    background: #0f172a;
+    color: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2rem;
+  }
+  .report-header h1 { font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+  .report-header .meta { font-size: 0.8rem; color: #94a3b8; }
+  .report-header .meta span { margin-right: 1.5rem; }
+
+  /* Summary cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    border: 2px solid #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .card .label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.2rem; }
+  .card .value { font-size: 1rem; font-weight: 900; color: #0f172a; }
+  .card.green  { border-color: #bbf7d0; background: #f0fdf4; }
+  .card.green  .value { color: #16a34a; }
+  .card.red    { border-color: #fecaca; background: #fef2f2; }
+  .card.red    .value { color: #dc2626; }
+  .card.yellow { border-color: #fef08a; background: #fefce8; }
+  .card.yellow .value { color: #ca8a04; }
+  .card.purple { border-color: #e9d5ff; background: #faf5ff; }
+  .card.purple .value { color: #7c3aed; }
+
+  /* Sections */
+  .section {
+    background: white;
+    border-radius: 1.25rem;
+    border: 2px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-header {
+    padding: 1.25rem 1.75rem;
+    border-bottom: 2px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fafafa;
+  }
+  .section-num {
+    background: #0f172a;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .section-header h2 { font-size: 1rem; font-weight: 900; color: #0f172a; }
+  .section-body { padding: 1.75rem; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 1rem 0; }
+  th {
+    background: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* Status badges */
+  .ok   { background: #dcfce7; color: #16a34a; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .bad  { background: #fee2e2; color: #dc2626; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .warn { background: #fef9c3; color: #b45309; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .new  { background: #ede9fe; color: #7c3aed; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+  .info { background: #dbeafe; color: #1d4ed8; font-weight: 800; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.75rem; white-space: nowrap; }
+
+  /* Code blocks */
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    font-family: "Consolas", "Fira Code", monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+  .code-block .cmt { color: #64748b; }
+  .code-block .kw  { color: #93c5fd; }
+  .code-block .str { color: #86efac; }
+  .code-block .fn  { color: #fde68a; }
+  .code-block .num { color: #f9a8d4; }
+  .code-block .add { color: #86efac; }
+  .code-block .del { color: #fca5a5; text-decoration: line-through; }
+
+  /* Change items */
+  .change-item {
+    border: 2px solid #f1f5f9;
+    border-radius: 1rem;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .change-item:last-child { margin-bottom: 0; }
+  .change-header {
+    padding: 0.9rem 1.25rem;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 2px solid #f1f5f9;
+    flex-wrap: wrap;
+  }
+  .change-num {
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.35rem;
+    white-space: nowrap;
+  }
+  .change-num.high   { background: #fee2e2; color: #dc2626; }
+  .change-num.medium { background: #fef9c3; color: #b45309; }
+  .change-num.low    { background: #dbeafe; color: #1d4ed8; }
+  .change-num.css    { background: #dcfce7; color: #16a34a; }
+  .change-header strong { font-size: 0.9rem; font-weight: 800; }
+  .change-header .location { font-size: 0.75rem; color: #94a3b8; font-family: monospace; margin-left: auto; }
+  .change-body { padding: 1.25rem; }
+  .change-body p { font-size: 0.875rem; color: #475569; margin-bottom: 0.75rem; }
+  .change-body p:last-child { margin-bottom: 0; }
+
+  /* Before/after labels */
+  .diff-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.75rem; margin-bottom: 0.3rem; }
+  .diff-label.before { color: #ef4444; }
+  .diff-label.after  { color: #22c55e; }
+
+  /* Tip boxes */
+  .tip-box {
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+  .tip-box:last-child { margin-bottom: 0; }
+  .tip-box.green  { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+  .tip-box.yellow { background: #fefce8; border: 1.5px solid #fef08a; }
+  .tip-box.blue   { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+  .tip-box.red    { background: #fef2f2; border: 1.5px solid #fecaca; }
+  .tip-box.purple { background: #faf5ff; border: 1.5px solid #e9d5ff; }
+  .tip-box h4 { font-weight: 800; margin-bottom: 0.4rem; font-size: 0.85rem; }
+  .tip-box.green  h4 { color: #15803d; }
+  .tip-box.yellow h4 { color: #92400e; }
+  .tip-box.blue   h4 { color: #1d4ed8; }
+  .tip-box.red    h4 { color: #dc2626; }
+  .tip-box.purple h4 { color: #7c3aed; }
+  .tip-box ul { padding-left: 1.25rem; margin-top: 0.3rem; }
+  .tip-box li { margin-bottom: 0.2rem; color: #475569; }
+
+  /* Screenshot callout */
+  .screenshot-note {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .screenshot-note .ss-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+  h3 { font-size: 0.9rem; font-weight: 800; color: #0f172a; margin: 1.25rem 0 0.6rem; }
+  h3:first-child { margin-top: 0; }
+  hr { border: none; border-top: 2px solid #f1f5f9; margin: 1.5rem 0; }
+
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>🏰 海中圓頂 夢想生活 — 技術分析報告</h1>
+    <div class="meta">
+      <span>📁 Sea_Life_noBase64_0522.html</span>
+      <span>📅 分析日期：2026-05-22</span>
+      <span>🔍 項目：手機 UI 修正 + Gemini 更新後 Bug 審查 + 住戶圖示圓形修正</span>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="cards">
+    <div class="card red">
+      <div class="icon">📱</div>
+      <div class="label">手機顯示問題</div>
+      <div class="value">2 件（含住戶圖）</div>
+    </div>
+    <div class="card red">
+      <div class="icon">🔴</div>
+      <div class="label">嚴重 Bug</div>
+      <div class="value">2 個</div>
+    </div>
+    <div class="card yellow">
+      <div class="icon">🟡</div>
+      <div class="label">中等 Bug</div>
+      <div class="value">2 個</div>
+    </div>
+    <div class="card purple">
+      <div class="icon">🟣</div>
+      <div class="label">輕微 Bug</div>
+      <div class="value">2 個</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Analysis -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">ONE</span>
+      <h2>問題分析</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>1-1　手機浮動視窗偏右問題</h3>
+
+      <div class="screenshot-note">
+        <span class="ss-icon">📸</span>
+        <div>
+          <strong>截圖來源：</strong> Screenshot_20260522-102320.png（手機瀏覽 bambi918.github.io）<br>
+          「歡迎回到海中圓頂」啟動 Modal 整體往右側偏移，未能置中於手機畫面。
+        </div>
+      </div>
+
+      <table>
+        <tr><th>檢查項目</th><th>狀態</th><th>說明</th></tr>
+        <tr>
+          <td>Modal HTML 結構</td>
+          <td><span class="ok">✅ 正確</span></td>
+          <td><code>fixed inset-0 flex items-center justify-center</code> — 寫法無誤</td>
+        </tr>
+        <tr>
+          <td><code>body</code> overflow-x 設定</td>
+          <td><span class="warn">⚠️ 不完整</span></td>
+          <td>只設在 <code>body</code>，未設在 <code>html</code></td>
+        </tr>
+        <tr>
+          <td>手機瀏覽器行為</td>
+          <td><span class="bad">💥 根本原因</span></td>
+          <td>部分手機瀏覽器將 body 的 <code>overflow-x: hidden</code> 視為新的 containing block，導致 <code>position: fixed</code> 的計算基準偏移</td>
+        </tr>
+        <tr>
+          <td>桌面版顯示</td>
+          <td><span class="ok">✅ 正常</span></td>
+          <td>桌面版不受影響，只有手機才會觸發此行為</td>
+        </tr>
+      </table>
+
+      <p style="font-size:0.85rem; color:#64748b; margin-top:0.5rem;">
+        <strong>根本原因</strong>：W3C 規範允許瀏覽器在 <code>body</code> 設有 <code>overflow</code> 時建立新的 formatting context。
+        Chrome for Android 等手機瀏覽器會據此重新計算 <code>fixed</code> 元素的偏移原點，
+        若 <code>html</code> 未同步設定 <code>overflow-x: hidden</code>，視口寬度計算就會出現差異，造成右移。
+      </p>
+
+      <hr>
+
+      <h3>1-2　Gemini 更新後新功能 Bug 總覽</h3>
+      <p style="font-size:0.85rem; color:#475569; margin-bottom:0.75rem;">
+        Gemini 於 0522 版新增三項功能（建築大小統一、拆除模式、圓頂縮放），審查後發現 5 個 Bug；另外手機實機測試時發現第 6 個住戶圖示顯示問題：
+      </p>
+
+      <table>
+        <tr><th>#</th><th>嚴重度</th><th>函數 / 位置</th><th>問題摘要</th><th>狀態</th></tr>
+        <tr>
+          <td>1</td>
+          <td><span class="bad">🔴 高</span></td>
+          <td><code>openDemolishModal()</code></td>
+          <td>建築 bpId 找不到時直接存取 <code>.name</code>，拋出 TypeError 崩潰</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><span class="bad">🔴 高</span></td>
+          <td><code>changeZoom()</code></td>
+          <td><code>calc(100% * 1.5)</code> 是無效 CSS 語法，縮放拉桿完全無效果</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><span class="warn">🟡 中</span></td>
+          <td><code>toggleDemolishMode()</code></td>
+          <td>關閉拆除模式時未呼叫 <code>renderOwnedBlueprints()</code>，UI 不刷新</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><span class="warn">🟡 中</span></td>
+          <td><code>toggleDemolishMode()</code></td>
+          <td>動態 <code>classList.add('hover:bg-slate-200')</code> 被 Tailwind JIT purge，hover 失效</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><span class="info">🟣 低</span></td>
+          <td><code>renderDomeBuildings()</code></td>
+          <td>SVG <code>dominant-baseline="middle"</code> 在部分 Android WebView 導致 emoji 裁切</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><span class="info">🟣 低</span></td>
+          <td><code>renderDomeBuildings()</code> — residentBadge</td>
+          <td>住戶頭像直接對 <code>&lt;img&gt;</code> 加 <code>rounded-full</code>，手機上不裁切，圖片顯示為扭曲方形</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- Section 2: Changes -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">TWO</span>
+      <h2>修正內容（共 7 處）</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>📱 手機顯示修正（1 處）</h3>
+
+      <!-- Fix 0: CSS mobile fix -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num css">CSS 修正</span>
+          <strong>html 加入 overflow-x: hidden + body 補 width: 100%</strong>
+          <span class="location">&lt;style&gt; 區塊 — body { ... }</span>
+        </div>
+        <div class="change-body">
+          <p>手機瀏覽器將 body 的 <code>overflow-x: hidden</code> 視為新的 containing block，導致 <code>position: fixed</code> 的 Modal 偏右。
+          修正方式是同時在 <code>html</code> 加上相同設定，消除視口計算差異。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="kw">body</span> {
+  font-family: <span class="str">'Noto Sans TC'</span>, sans-serif;
+  background-color: <span class="num">#fffafa</span>;
+  color: <span class="num">#0f172a</span>;
+  overflow-x: hidden;
+  margin: <span class="num">0</span>;
+}</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="add">html {
+  overflow-x: hidden;
+}</span>
+<span class="kw">body</span> {
+  font-family: <span class="str">'Noto Sans TC'</span>, sans-serif;
+  background-color: <span class="num">#fffafa</span>;
+  color: <span class="num">#0f172a</span>;
+  overflow-x: hidden;
+  margin: <span class="num">0</span>;
+  <span class="add">width: 100%;</span>
+}</div>
+        </div>
+      </div>
+
+      <hr>
+      <h3>🔴 嚴重 Bug 修正（2 處）</h3>
+
+      <!-- Fix 1: openDemolishModal null guard -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num high">Bug 1 — 高</span>
+          <strong>openDemolishModal — 加入 null guard 防崩潰</strong>
+          <span class="location">function openDemolishModal()</span>
+        </div>
+        <div class="change-body">
+          <p>若建築的 <code>bpId</code> 在 <code>shopItemsData</code> 找不到對應項目，直接存取 <code>item.name</code> 會拋出
+          <code>TypeError: Cannot read properties of undefined</code>，導致拆除模式整個失效且無錯誤提示。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="kw">function</span> <span class="fn">openDemolishModal</span>(buildingId) {
+  <span class="kw">const</span> b    = gameState.buildings.<span class="fn">find</span>(x => x.id === buildingId);
+  <span class="kw">const</span> item = shopItemsData.<span class="fn">find</span>(i => i.id === b.bpId);  <span class="cmt">// ← item 可能是 undefined</span>
+  document.<span class="fn">getElementById</span>(<span class="str">'demolish-target-name'</span>).innerText = item.name;  <span class="cmt">// 💥 crash</span>
+  ...</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">function</span> <span class="fn">openDemolishModal</span>(buildingId) {
+  <span class="kw">const</span> b    = gameState.buildings.<span class="fn">find</span>(x => x.id === buildingId);
+  <span class="kw">const</span> item = b ? shopItemsData.<span class="fn">find</span>(i => i.id === b.bpId) : <span class="kw">null</span>;
+  <span class="add">if (!b || !item) return;</span>  <span class="cmt">// null guard</span>
+  document.<span class="fn">getElementById</span>(<span class="str">'demolish-target-name'</span>).innerText = item.name;
+  ...</div>
+        </div>
+      </div>
+
+      <!-- Fix 2: changeZoom invalid CSS -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num high">Bug 2 — 高</span>
+          <strong>changeZoom — 修正無效的 calc() 語法</strong>
+          <span class="location">function changeZoom()</span>
+        </div>
+        <div class="change-body">
+          <p><code>calc(100% * 1.5)</code> 是無效的 CSS 語法，CSS <code>calc()</code> 不允許「百分比 × 純數字」的乘法運算，
+          瀏覽器會靜默忽略整行，縮放拉桿拖動完全沒有視覺效果。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="del">wrapper.style.width    = `calc(100% * ${val})`;</span>   <span class="cmt">// ← 無效 CSS</span>
+<span class="del">wrapper.style.maxWidth = `calc(500px * ${val})`;</span>  <span class="cmt">// ← 無效 CSS</span></div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="add">wrapper.style.width    = `${parseFloat(val) * 100}%`;</span>
+<span class="add">wrapper.style.maxWidth = `${parseFloat(val) * 500}px`;</span></div>
+        </div>
+      </div>
+
+      <hr>
+      <h3>🟡 中等 Bug 修正（2 處）</h3>
+
+      <!-- Fix 3: toggleDemolishMode missing render -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num medium">Bug 3 — 中</span>
+          <strong>toggleDemolishMode — 關閉時補呼叫 renderOwnedBlueprints()</strong>
+          <span class="location">function toggleDemolishMode() — else 分支</span>
+        </div>
+        <div class="change-body">
+          <p>開啟拆除模式時會呼叫 <code>renderOwnedBlueprints()</code> 更新藍圖列表；但關閉時的 else 分支遺漏了這個呼叫，
+          導致關閉後藍圖的選取狀態不會正確還原。</p>
+          <div class="diff-label after">After（else 分支補上）</div>
+          <div class="code-block">} <span class="kw">else</span> {
+  btn.classList.<span class="fn">remove</span>(<span class="str">'bg-red-500'</span>, <span class="str">'text-white'</span>, <span class="str">'border-red-600'</span>, <span class="str">'shadow-inner'</span>);
+  btn.classList.<span class="fn">add</span>(<span class="str">'bg-slate-100'</span>, <span class="str">'text-slate-500'</span>);
+  btn.innerHTML = <span class="str">'🪓 拆除模式 (關閉)'</span>;
+  <span class="add">renderOwnedBlueprints();</span>  <span class="cmt">// ← 補上</span>
+}</div>
+        </div>
+      </div>
+
+      <!-- Fix 4: Tailwind hover purge -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num medium">Bug 4 — 中</span>
+          <strong>toggleDemolishMode — 不動態移除 hover class</strong>
+          <span class="location">function toggleDemolishMode() — classList 操作</span>
+        </div>
+        <div class="change-body">
+          <p>Tailwind CDN 使用 JIT 模式，只會保留在 HTML 原始碼中「靜態出現」的 class 樣式。
+          若先用 <code>classList.remove('hover:bg-slate-200')</code> 移除，再用 <code>classList.add('hover:bg-slate-200')</code> 重新加回，
+          這個 class 名稱對應的 CSS 規則已被 purge 而不存在，加回去也沒有效果，按鈕 hover 樣式永久失效。</p>
+          <div class="diff-label before">Before（有誤）</div>
+          <div class="code-block"><span class="cmt">// 開啟時</span>
+btn.classList.<span class="fn">remove</span>(<span class="str">'bg-slate-100'</span>, <span class="str">'text-slate-500'</span>, <span class="del">'hover:bg-slate-200'</span>);  <span class="cmt">// ← 不該移除 hover class</span>
+<span class="cmt">// 關閉時</span>
+btn.classList.<span class="fn">add</span>(<span class="str">'bg-slate-100'</span>, <span class="str">'text-slate-500'</span>, <span class="del">'hover:bg-slate-200'</span>);    <span class="cmt">// ← 加回也無效</span></div>
+          <div class="diff-label after">After（只切換背景色，不碰 hover class）</div>
+          <div class="code-block"><span class="cmt">// 開啟時</span>
+btn.classList.<span class="fn">remove</span>(<span class="str">'bg-slate-100'</span>, <span class="str">'text-slate-500'</span>);
+<span class="cmt">// 關閉時</span>
+btn.classList.<span class="fn">add</span>(<span class="str">'bg-slate-100'</span>, <span class="str">'text-slate-500'</span>);
+<span class="cmt">// hover:bg-slate-200 留在 HTML 原始碼，永遠不動</span></div>
+        </div>
+      </div>
+
+      <hr>
+      <h3>🟣 輕微 Bug 修正（2 處）</h3>
+
+      <!-- Fix 5: SVG emoji -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num low">Bug 5 — 低</span>
+          <strong>renderDomeBuildings — SVG emoji 垂直置中改用 dy 屬性</strong>
+          <span class="location">renderDomeBuildings() — emoji 轉 SVG 邏輯</span>
+        </div>
+        <div class="change-body">
+          <p>SVG <code>&lt;text&gt;</code> 使用 <code>dominant-baseline="middle"</code> 在 Chrome for Android / Android WebView 上
+          有已知渲染問題，會導致 emoji 字符垂直偏移或被截掉上半部。改用 <code>dy="0.35em"</code> 方式置中，相容性更佳。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block">&lt;text x=<span class="str">"50%"</span> y=<span class="str">"55%"</span> font-size=<span class="str">"75"</span> text-anchor=<span class="str">"middle"</span>
+      <span class="del">dominant-baseline="middle"</span>&gt;${item.icon}&lt;/text&gt;</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block">&lt;text x=<span class="str">"50%"</span> y=<span class="str">"50%"</span> font-size=<span class="str">"75"</span> text-anchor=<span class="str">"middle"</span>
+      <span class="add">dy="0.35em"</span>&gt;${item.icon}&lt;/text&gt;</div>
+        </div>
+      </div>
+
+      <!-- Fix 6: resident badge circle -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num low">Bug 6 — 低</span>
+          <strong>renderDomeBuildings — 住戶頭像改用 div 包裹確保圓形裁切</strong>
+          <span class="location">renderDomeBuildings() — residentBadge</span>
+        </div>
+        <div class="change-body">
+          <p>住戶頭像（<code>canvas.toDataURL()</code> 產生的 base64 圖片）直接套在 <code>&lt;img&gt;</code> 上加 <code>rounded-full</code>，
+          在手機瀏覽器（尤其 Android Chrome）上 <code>border-radius</code> 不會裁切圖片內容，
+          導致圖片以原始比例顯示為扭曲的方形色塊。</p>
+          <p>標準做法是外層加一個 <code>div</code> 並設 <code>overflow-hidden</code>，由 div 的圓角負責裁切，img 只需填滿容器。</p>
+          <div class="screenshot-note" style="margin-bottom:0.75rem;">
+            <span class="ss-icon">📸</span>
+            <div>
+              <strong>截圖來源：</strong> Screenshot_20260522-111423.png — 設計圓頂畫面可見建築上出現扭曲方形的住戶圖片
+            </div>
+          </div>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="cmt">// &lt;img&gt; 直接加 rounded-full — 手機上不裁切</span>
+residentBadge = <span class="str">`&lt;img src="${res.img}"
+  class="absolute -top-3 -right-3 <span class="del">w-12 h-12 rounded-full</span> border-[3px] border-white shadow-xl object-cover z-30"
+  onerror="this.style.display='none'"&gt;`</span>;</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="cmt">// div 負責裁切，img 填滿容器 — 正確圓形</span>
+residentBadge = <span class="str">`&lt;div class="absolute -top-3 -right-3 <span class="add">w-12 h-12 rounded-full overflow-hidden</span> border-[3px] border-white shadow-xl z-30"&gt;
+  &lt;img src="${res.img}" class="w-full h-full object-cover"
+       onerror="this.parentElement.style.display='none'"&gt;
+&lt;/div&gt;`</span>;</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Section 3: Notes -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">THREE</span>
+      <h2>後續注意事項</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="tip-box green">
+        <h4>✅ 手機 Modal 置中的通用守則</h4>
+        <ul>
+          <li>凡是 <code>body</code> 設有 <code>overflow-x: hidden</code>，<code>html</code> 也必須同步設定</li>
+          <li>否則手機瀏覽器會建立錯誤的 containing block，所有 <code>position: fixed</code> 的元素都可能位移</li>
+          <li>保險做法：<code>html, body { overflow-x: hidden; }</code> 寫在一起</li>
+        </ul>
+      </div>
+
+      <div class="tip-box yellow">
+        <h4>⚠️ Tailwind CDN JIT 動態 class 的使用限制</h4>
+        <ul>
+          <li>Tailwind CDN 只保留「在 HTML 靜態出現」的 class 樣式規則</li>
+          <li>若要用 JavaScript 動態切換樣式，class 名稱必須事先出現在 HTML 中，不能只靠 JS 動態 add</li>
+          <li>安全做法：只移除 / 加回「基礎色」class（如 <code>bg-red-500</code>），條件式 class（如 <code>hover:</code>、<code>focus:</code>）保留在 HTML 原始碼，不用 JS 操作</li>
+        </ul>
+      </div>
+
+      <div class="tip-box blue">
+        <h4>🔧 calc() 乘法的正確寫法</h4>
+        <ul>
+          <li><code>calc(100% * 1.5)</code> — ❌ 無效（兩個有單位值相乘）</li>
+          <li><code>calc(1.5 * 100%)</code> — ✅ 有效（純數字 × 有單位值）</li>
+          <li>更簡單：直接用 JS 先算好數字再帶入，如 <code>`${val * 100}%`</code>，完全避開 calc 語法問題</li>
+        </ul>
+      </div>
+
+      <div class="tip-box red">
+        <h4>🔴 新增「拆除模式」後的未來維護提醒</h4>
+        <ul>
+          <li>拆除建築時，該建築的居民不會被自動移除，仍保留在 <code>gameState.residents</code></li>
+          <li>被拆除建築的居民狀態目前沒有明確標記（無家可歸），若日後需要顯示「無家可歸」列表，需補充邏輯</li>
+          <li>拆除費用目前寫死為 <code>100 DC</code>（hardcode），若要動態設定建議提取為常數</li>
+        </ul>
+      </div>
+
+      <div class="tip-box purple">
+        <h4>📐 圓頂縮放（Zoom）與建築大小統一的關係</h4>
+        <ul>
+          <li>縮放倍率由 <code>changeZoom(val)</code> 控制，只影響畫布 wrapper 的寬高，不影響建築的實際座標</li>
+          <li>建築大小統一由 <code>getExpansionScale()</code> 計算，回傳值隨「圓頂擴張工程」等級提高而增大，讓相對佔地縮小</li>
+          <li>兩者互相獨立，可同時使用：縮放是「鏡頭拉近」，擴張工程是「房子實際變小」</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    Sea_Life_noBase64_0522.html &nbsp;|&nbsp; 分析報告 v2 &nbsp;|&nbsp; 2026-05-22
+  </div>
+
+</div>
+</body>
+</html>

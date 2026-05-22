@@ -1563,7 +1563,7 @@
                     if (b.resident) {
                         const res = gameState.residents.find(r => r.name.toLowerCase() === b.resident.toLowerCase());
                         if (res) {
-                            residentBadge = `<img src="${res.img}" class="absolute -top-3 -right-3 w-12 h-12 rounded-full border-[3px] border-white shadow-xl object-cover z-30" onerror="this.style.display='none'">`;
+                            residentBadge = `<div class="absolute -top-3 -right-3 w-12 h-12 rounded-full border-[3px] border-white shadow-xl overflow-hidden z-30"><img src="${res.img}" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none'"></div>`;
                         }
                     }
                     
