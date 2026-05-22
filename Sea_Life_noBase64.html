@@ -8,12 +8,16 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         
+        html {
+            overflow-x: hidden;
+        }
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #fffafa;
             color: #0f172a; /* Slate 950 - 優雅深藍 */
             overflow-x: hidden;
             margin: 0;
+            width: 100%;
         }
 
         .sakura-petal {
@@ -26,7 +30,7 @@
         }
         .paw-print { position: absolute; opacity: 0.08; z-index: 0; pointer-events: none; color: #f9a8d4; }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; border: 2px solid #fff; }
 
@@ -67,7 +71,7 @@
             justify-content: center;
             transition: all 0.3s;
             cursor: pointer;
-            pointer-events: auto; /* 確保建築可點擊 */
+            pointer-events: auto;
         }
         .building-item:hover { z-index: 10; transform: translate(-50%, -50%) scale(1.05); }
         .blueprint-btn.selected { border-color: #f472b6; background: #fdf2f8; transform: scale(1.05); }
@@ -101,7 +105,7 @@
                         <button onclick="document.getElementById('save-import').click()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full transition-colors font-bold">
                             📤 匯入
                         </button>
-                        <!-- 新增的 API 設定按鈕 -->
+                        <!-- API 設定按鈕 -->
                         <button onclick="openSettings()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full transition-colors font-bold border border-indigo-100">
                             ⚙️ API設定
                         </button>
@@ -195,13 +199,22 @@
             <button onclick="closeDome()" class="absolute top-6 right-6 w-12 h-12 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black text-xl transition-colors flex items-center justify-center z-50">✕</button>
             
             <!-- 圓頂視圖區 (包含道路畫布與建築層) -->
-            <div class="lg:flex-1 bg-slate-50/50 p-6 md:p-12 flex flex-col items-center justify-center border-r border-slate-100 overflow-y-auto min-h-[500px]">
-                <h3 class="text-2xl font-black text-slate-950 mb-6 flex items-center gap-2">📐 你的海中圓頂</h3>
-                <div class="w-full max-w-lg aspect-square relative">
+            <div class="lg:flex-1 bg-slate-50/50 p-6 md:p-12 flex flex-col items-center justify-center border-r border-slate-100 overflow-auto relative custom-scrollbar min-h-[500px]">
+                
+                <!-- 上方工具列 (縮放控制) -->
+                <div class="absolute top-6 left-6 md:left-12 z-40 flex items-center gap-3 bg-white/90 backdrop-blur-sm px-5 py-3 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-black text-slate-500">🔍 縮放</span>
+                    <input type="range" id="zoom-slider" min="0.5" max="3" step="0.1" value="1" oninput="changeZoom(this.value)" class="w-20 md:w-28 cursor-pointer">
+                    <span id="zoom-display" class="text-xs font-bold text-slate-400 w-8 text-right">1.0x</span>
+                </div>
+
+                <h3 class="text-2xl font-black text-slate-950 mb-6 flex items-center gap-2 mt-16 md:mt-0">📐 你的海中圓頂</h3>
+                
+                <div class="w-full aspect-square relative transition-all" id="dome-zoom-wrapper" style="width: 100%; max-width: 500px;">
                     <div class="dome-area w-full h-full rounded-full relative border-8 border-white shadow-2xl overflow-hidden" id="dome-area-container">
-                        <!-- 道路畫布層 (位於建築下方) -->
+                        <!-- 道路畫布層 -->
                         <canvas id="road-canvas" width="1000" height="1000" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></canvas>
-                        <!-- 建築放置層 (指標穿透，但建築物本身可點擊) -->
+                        <!-- 建築放置層 -->
                         <div id="dome-buildings-container" class="absolute inset-0 w-full h-full z-10 pointer-events-none">
                             <!-- JS 動態產生建築 -->
                         </div>
@@ -213,25 +226,47 @@
             <div class="w-full lg:w-[400px] bg-white flex flex-col overflow-y-auto custom-scrollbar p-8 md:p-12 border-t lg:border-t-0">
                 <div class="mb-8">
                     <h4 class="text-xl font-black text-slate-900 mb-2">已擁有的藍圖</h4>
-                    <p class="text-xs text-slate-500 font-bold">選擇藍圖並在左側點擊放置（步道可直接畫線）。點擊完工房屋可進行裝潢或入住！</p>
+                    <p class="text-xs text-slate-500 font-bold">選擇藍圖並在左側點擊放置（步道可直接畫線）。<br>⚠️ 當科技提升時，圓頂內部可用空間會變大！</p>
                 </div>
                 
                 <div class="space-y-4 flex-1" id="owned-blueprints-container">
                     <!-- JS 動態產生已購買的藍圖 -->
                 </div>
 
-                <div class="mt-8 pt-8 border-t border-slate-100">
+                <div class="mt-8 pt-8 border-t border-slate-100 space-y-3">
                     <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex justify-between items-center">
                         <div>
                             <p class="text-xs font-black text-blue-600 mb-1">👷 目前的建築團隊</p>
                             <p class="text-sm font-bold text-slate-700" id="architect-status">建築師人數: 0</p>
                         </div>
                     </div>
-                    <button onclick="clearRoads()" class="mt-4 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 px-4 py-3 rounded-xl font-bold w-full transition-colors flex justify-center items-center gap-2">
+
+                    <!-- 拆除模式切換按鈕 -->
+                    <button id="demolish-toggle-btn" onclick="toggleDemolishMode()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 px-4 py-4 rounded-xl font-black w-full transition-all flex justify-center items-center gap-2 border-2 border-transparent">
+                        🪓 拆除模式 (關閉)
+                    </button>
+
+                    <button onclick="clearRoads()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 px-4 py-3 rounded-xl font-bold w-full transition-colors flex justify-center items-center gap-2">
                         🧽 清除所有已繪製的道路
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 拆除確認 Modal -->
+    <div id="demolish-modal" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
+        <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl border-4 border-red-100 relative text-center">
+            <button onclick="closeDemolishModal()" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
+            <div class="text-5xl mb-4">🧨</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-2">確定要拆除嗎？</h3>
+            <p class="text-sm font-bold text-slate-500 mb-6 leading-relaxed">即將拆除「<span id="demolish-target-name" class="text-red-500 font-black"></span>」。<br>拆除不會退還費用，且需支付 <span class="text-slate-900 font-black bg-slate-100 px-2 py-1 rounded">100 DC</span> 清理費！</p>
+            <button onclick="confirmDemolish()" class="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-black transition-all shadow-lg active:scale-95 mb-3">
+                付費 100 DC 並拆除
+            </button>
+            <button onclick="closeDemolishModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-all">
+                取消
+            </button>
         </div>
     </div>
 
@@ -412,7 +447,7 @@
         </div>
     </div>
 
-    <!-- API 設定 Modal (新增) -->
+    <!-- API 設定 Modal -->
     <div id="settings-modal" class="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 backdrop-blur-md hidden p-4">
         <div class="bg-white rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-8 max-h-[88vh] overflow-y-auto shadow-2xl max-w-md w-full border border-slate-100 relative">
             <button onclick="closeSettings()" class="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-black flex items-center justify-center">✕</button>
@@ -436,7 +471,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ================= 遊戲狀態 (必須最先宣告) =================
+        // ================= 遊戲狀態 =================
         let gameState = {
             saveVersion: 2,
             day: 1,
@@ -448,7 +483,7 @@
             techs: [
                 { id: 'tourism', name: '櫻花咖啡廳', lv: 0, cost: 300, desc: '每日被動獲得 150 DC' },
                 { id: 'garden', name: '肉球溫室', lv: 0, cost: 500, desc: '提升居民送禮機率' },
-                { id: 'space', name: '圓頂擴張工程', lv: 0, cost: 1000, desc: '額外增加 5 人上限' }
+                { id: 'space', name: '圓頂擴張工程', lv: 0, cost: 1000, desc: '擴大圓頂內部可用空間與 5 人上限' }
             ],
             blueprints: [],
             buildings: [],
@@ -483,7 +518,7 @@
             closeSettings();
         }
 
-        // ================= 內建隨機題庫 (無金鑰時使用) =================
+        // ================= 內建隨機題庫 =================
         const fallbackNews = [
             "🌸 櫻花季持續進行中！居民表示：「每天看到櫻花飄落在海中，心情都變好了呢喵～」",
             "🛠️ 建築工地的敲打聲成為了圓頂最新的 ASMR。有居民甚至每天去工地旁野餐，表示十分療癒。",
@@ -508,7 +543,6 @@
             "設計師昨天幫我弄的新家超棒的！我整個週末都不想出門了。"
         ];
 
-        // 帶有重試機制與錯誤處理的 API 呼叫函數
         async function fetchWithRetry(url, payload, retries = 3) {
             const delays = [1000, 2000, 4000];
             for (let i = 0; i < retries; i++) {
@@ -527,12 +561,11 @@
             }
         }
 
-        // 雲端與單機存檔初始化設定
+        // ================= 存檔邏輯 =================
         let db, auth, userId;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let tempSaveData = null;
 
-        // 檢查單機(localStorage)存檔的功能
         function checkLocalSave() {
             try {
                 const localData = localStorage.getItem('sea_life_save_v1');
@@ -549,7 +582,6 @@
             }
         }
 
-        // 雲端與單機判斷機制
         try {
             const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
             if (firebaseConfig) {
@@ -568,13 +600,11 @@
                         console.error("登入失敗：", error);
                     }
                 };
-
                 initAuth();
-
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        await checkSave(); // 有雲端則檢查雲端
+                        await checkSave();
                     }
                 });
             } else {
@@ -589,7 +619,6 @@
             try {
                 const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
                 const docSnap = await getDoc(docRef);
-                
                 if (docSnap.exists() && docSnap.data().saveData) {
                     tempSaveData = JSON.parse(docSnap.data().saveData);
                     document.getElementById('save-info').innerText = `[雲端紀錄] 第 ${tempSaveData.day} 天 | 人口 ${tempSaveData.residents.length}/${tempSaveData.popLimit} | 💎 ${tempSaveData.coins}`;
@@ -607,9 +636,7 @@
             if (userId && db) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'gamedata', 'saveSlot');
-                    await setDoc(docRef, {
-                        saveData: JSON.stringify(gameState)
-                    });
+                    await setDoc(docRef, { saveData: JSON.stringify(gameState) });
                     console.log("遊戲進度已完整儲存到雲端！");
                 } catch (error) {
                     console.error("儲存雲端進度失敗：", error);
@@ -647,7 +674,6 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    // 基礎 migration
                     if (!data.blueprints) data.blueprints = [];
                     if (data.bossJoined === undefined) data.bossJoined = data.baoxiJoined || false;
                     if (data.mashaJoined === undefined) data.mashaJoined = false;
@@ -680,6 +706,13 @@
             reader.readAsText(file);
         }
 
+        // ================= 獲取擴充比例 (圓頂擴張工程) =================
+        function getExpansionScale() {
+            const spaceLv = gameState.techs.find(t => t.id === 'space')?.lv || 0;
+            // 每升級一次，所有物件相對縮小，創造更多空間
+            return 1 + (spaceLv * 0.4); 
+        }
+
         function redrawRoads(tempLine = null) {
             const rc = document.getElementById('road-canvas');
             if(!rc) return;
@@ -692,8 +725,9 @@
                 img.src = gameState.roadData;
             }
 
+            const scale = getExpansionScale();
             ctx.strokeStyle = '#8B4513';
-            ctx.lineWidth = 20;
+            ctx.lineWidth = 20 / scale; // 道路跟著縮放
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
@@ -764,31 +798,32 @@
             updateUI();
         }
 
+        // 已微調過 size 的基礎大小，讓所有建築比例看起來更順眼
         const shopItemsData = [
-            { id: 'bp_road', type: 'blueprint', name: '小步道藍圖', price: 10, icon: '🛤️', desc: '解鎖步道鋪設功能。選擇後在圓頂內滑動，自動畫出筆直水平或垂直的街道。', minArch: 0, points: 0, size: 8, livable: false, isCommercial: false },
-            { id: 'bp_basic', type: 'blueprint', name: '溫馨小屋藍圖', price: 500, icon: '🏠', desc: '基礎居住單位。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 2, size: 15, livable: true, isCommercial: false },
-            { id: 'bp_villa', type: 'blueprint', name: '豪華別墅藍圖', price: 1500, icon: '🏡', desc: '帶有小花園的高級住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 6, size: 23, livable: true, isCommercial: false },
-            { id: 'bp_house_jp', type: 'blueprint', name: '日式和風大宅', price: 2000, icon: '⛩️', desc: '充滿寧靜氛圍的和風住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 25, livable: true, isCommercial: false },
-            { id: 'bp_house_mushroom', type: 'blueprint', name: '深海蘑菇屋', price: 1200, icon: '🍄', desc: '造型可愛的童話房屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 4, size: 18, livable: true, isCommercial: false },
-            { id: 'bp_house_glass', type: 'blueprint', name: '現代晶透玻璃屋', price: 2500, icon: '🧊', desc: '能盡情欣賞海景的現代建築。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 10, size: 23, livable: true, isCommercial: false },
+            { id: 'bp_road', type: 'blueprint', name: '小步道藍圖', price: 10, icon: '🛤️', desc: '解鎖步道鋪設功能。選擇後在圓頂內滑動，自動畫出筆直水平或垂直的街道。', minArch: 0, points: 0, size: 5, livable: false, isCommercial: false },
+            { id: 'bp_basic', type: 'blueprint', name: '溫馨小屋藍圖', price: 500, icon: '🏠', desc: '基礎居住單位。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 2, size: 10, livable: true, isCommercial: false },
+            { id: 'bp_villa', type: 'blueprint', name: '豪華別墅藍圖', price: 1500, icon: '🏡', desc: '帶有小花園的高級住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 6, size: 14, livable: true, isCommercial: false },
+            { id: 'bp_house_jp', type: 'blueprint', name: '日式和風大宅', price: 2000, icon: '⛩️', desc: '充滿寧靜氛圍的和風住宅。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 16, livable: true, isCommercial: false },
+            { id: 'bp_house_mushroom', type: 'blueprint', name: '深海蘑菇屋', price: 1200, icon: '🍄', desc: '造型可愛的童話房屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 4, size: 11, livable: true, isCommercial: false },
+            { id: 'bp_house_glass', type: 'blueprint', name: '現代晶透玻璃屋', price: 2500, icon: '🧊', desc: '能盡情欣賞海景的現代建築。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 10, size: 14, livable: true, isCommercial: false },
             
-            { id: 'bp_modern_pool', type: 'blueprint', name: '現代泳池別墅', price: 3200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="55" y="70" width="40" height="20" fill="#7dd3fc" stroke="#38bdf8" stroke-width="2" rx="4"/><path d="M 60 80 Q 65 75 70 80 T 80 80 T 90 80" fill="none" stroke="#fff" stroke-width="2" opacity="0.6"/><rect x="5" y="50" width="60" height="40" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="10" y="55" width="20" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="55" width="25" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="20" y1="55" x2="20" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="47" y1="55" x2="47" y2="90" stroke="#cbd5e1" stroke-width="1"/><rect x="20" y="15" width="45" height="35" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="20" width="35" height="30" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="36" y1="20" x2="36" y2="50" stroke="#cbd5e1" stroke-width="1"/><line x1="48" y1="20" x2="48" y2="50" stroke="#cbd5e1" stroke-width="1"/><rect x="5" y="45" width="15" height="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/><rect x="5" y="30" width="15" height="15" fill="#bae6fd" opacity="0.5" stroke="#94a3b8" stroke-width="1"/><rect x="18" y="12" width="50" height="3" fill="#64748b"/><rect x="3" y="47" width="64" height="3" fill="#64748b"/></svg>', desc: '擁有私人無邊際泳池的現代別墅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: true, isCommercial: false },
-            { id: 'bp_modern_minimalist', type: 'blueprint', name: '現代極簡微型屋', price: 1000, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="25" y="40" width="50" height="50" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="20" y="30" width="60" height="10" fill="#64748b" stroke="#475569" stroke-width="2"/><rect x="35" y="50" width="30" height="40" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="50" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="35" y1="70" x2="65" y2="70" stroke="#cbd5e1" stroke-width="1"/><line x1="15" y1="90" x2="85" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '幾何線條構成的極簡風格微型屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 5, size: 18, livable: true, isCommercial: false },
-            { id: 'bp_modern_sky_garden', type: 'blueprint', name: '現代空中花園宅', price: 4200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="30" y="15" width="40" height="75" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="40" width="50" height="15" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><path d="M 25 55 Q 30 65 35 55 T 45 55 T 55 55 T 65 55 T 75 55" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><rect x="35" y="20" width="30" height="20" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="65" width="30" height="25" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="65" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><path d="M 30 15 Q 40 5 50 15 T 70 15" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><line x1="20" y1="90" x2="80" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '結合垂直綠化的現代建築。裝潢後可入住。需 4 名建築師。', minArch: 4, points: 18, size: 30, livable: true, isCommercial: false },
-            { id: 'bp_modern_smart', type: 'blueprint', name: '現代科技智慧宅', price: 3800, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><path d="M 15 90 L 15 50 L 50 30 L 85 50 L 85 90 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/><polygon points="15,50 50,30 85,50 50,65" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="40" y="70" width="20" height="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/><circle cx="50" cy="80" r="3" fill="#38bdf8"/><rect x="25" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><rect x="60" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><line x1="5" y1="90" x2="95" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '全自動化的高科技現代宅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 15, size: 25, livable: true, isCommercial: false },
-            { id: 'bp_modern_loft', type: 'blueprint', name: '現代挑高工業風', price: 2200, icon: '<svg viewBox="0 0 100 100" width="1em" height="1em" class="inline-block"><rect x="20" y="20" width="60" height="70" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="25" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><rect x="55" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><line x1="25" y1="55" x2="45" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="55" y1="55" x2="75" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="35" y1="30" x2="35" y2="80" stroke="#94a3b8" stroke-width="2"/><line x1="65" y1="30" x2="65" y2="80" stroke="#94a3b8" stroke-width="2"/><rect x="15" y="10" width="70" height="10" fill="#334155"/><line x1="10" y1="90" x2="90" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '大面落地窗的工業風現代公寓。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 23, livable: true, isCommercial: false },
+            { id: 'bp_modern_pool', type: 'blueprint', name: '現代泳池別墅', price: 3200, icon: '<svg viewBox="0 0 100 100"><rect x="55" y="70" width="40" height="20" fill="#7dd3fc" stroke="#38bdf8" stroke-width="2" rx="4"/><path d="M 60 80 Q 65 75 70 80 T 80 80 T 90 80" fill="none" stroke="#fff" stroke-width="2" opacity="0.6"/><rect x="5" y="50" width="60" height="40" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="10" y="55" width="20" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="55" width="25" height="35" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="20" y1="55" x2="20" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="47" y1="55" x2="47" y2="90" stroke="#cbd5e1" stroke-width="1"/><rect x="20" y="15" width="45" height="35" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="20" width="35" height="30" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="36" y1="20" x2="36" y2="50" stroke="#cbd5e1" stroke-width="1"/><line x1="48" y1="20" x2="48" y2="50" stroke="#cbd5e1" stroke-width="1"/><rect x="5" y="45" width="15" height="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/><rect x="5" y="30" width="15" height="15" fill="#bae6fd" opacity="0.5" stroke="#94a3b8" stroke-width="1"/><rect x="18" y="12" width="50" height="3" fill="#64748b"/><rect x="3" y="47" width="64" height="3" fill="#64748b"/></svg>', desc: '擁有私人無邊際泳池的現代別墅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 12, size: 18, livable: true, isCommercial: false },
+            { id: 'bp_modern_minimalist', type: 'blueprint', name: '現代極簡微型屋', price: 1000, icon: '<svg viewBox="0 0 100 100"><rect x="25" y="40" width="50" height="50" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="20" y="30" width="60" height="10" fill="#64748b" stroke="#475569" stroke-width="2"/><rect x="35" y="50" width="30" height="40" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="50" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><line x1="35" y1="70" x2="65" y2="70" stroke="#cbd5e1" stroke-width="1"/><line x1="15" y1="90" x2="85" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '幾何線條構成的極簡風格微型屋。裝潢後可入住。需 1 名建築師。', minArch: 1, points: 5, size: 11, livable: true, isCommercial: false },
+            { id: 'bp_modern_sky_garden', type: 'blueprint', name: '現代空中花園宅', price: 4200, icon: '<svg viewBox="0 0 100 100"><rect x="30" y="15" width="40" height="75" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><rect x="25" y="40" width="50" height="15" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><path d="M 25 55 Q 30 65 35 55 T 45 55 T 55 55 T 65 55 T 75 55" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><rect x="35" y="20" width="30" height="20" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><rect x="35" y="65" width="30" height="25" fill="#e0f2fe" stroke="#cbd5e1" stroke-width="2"/><line x1="50" y1="65" x2="50" y2="90" stroke="#cbd5e1" stroke-width="1"/><path d="M 30 15 Q 40 5 50 15 T 70 15" fill="#4ade80" stroke="#22c55e" stroke-width="1"/><line x1="20" y1="90" x2="80" y2="90" stroke="#64748b" stroke-width="3"/></svg>', desc: '結合垂直綠化的現代建築。裝潢後可入住。需 4 名建築師。', minArch: 4, points: 18, size: 19, livable: true, isCommercial: false },
+            { id: 'bp_modern_smart', type: 'blueprint', name: '現代科技智慧宅', price: 3800, icon: '<svg viewBox="0 0 100 100"><path d="M 15 90 L 15 50 L 50 30 L 85 50 L 85 90 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/><polygon points="15,50 50,30 85,50 50,65" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="40" y="70" width="20" height="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/><circle cx="50" cy="80" r="3" fill="#38bdf8"/><rect x="25" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><rect x="60" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><line x1="5" y1="90" x2="95" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '全自動化的高科技現代宅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 15, size: 16, livable: true, isCommercial: false },
+            { id: 'bp_modern_loft', type: 'blueprint', name: '現代挑高工業風', price: 2200, icon: '<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="70" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="25" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><rect x="55" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><line x1="25" y1="55" x2="45" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="55" y1="55" x2="75" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="35" y1="30" x2="35" y2="80" stroke="#94a3b8" stroke-width="2"/><line x1="65" y1="30" x2="65" y2="80" stroke="#94a3b8" stroke-width="2"/><rect x="15" y="10" width="70" height="10" fill="#334155"/><line x1="10" y1="90" x2="90" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '大面落地窗的工業風現代公寓。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 14, livable: true, isCommercial: false },
 
-            { id: 'bp_hotel', type: 'blueprint', name: '海景飯店藍圖', price: 3500, icon: '🏨', desc: '十分氣派的飯店。裝潢後可入住，每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 28, livable: true, isCommercial: true, minIncome: 200, maxIncome: 1500 },
-            { id: 'bp_aquarium', type: 'blueprint', name: '深海水族館藍圖', price: 4000, icon: '🐠', desc: '展示海洋奇觀的水族館。每天產生營收。需 4 名建築師。', minArch: 4, points: 20, size: 35, livable: false, isCommercial: true, minIncome: 200, maxIncome: 1500 },
-            { id: 'bp_amusement', type: 'blueprint', name: '夢想遊樂園藍圖', price: 5000, icon: '🎡', desc: '充滿歡笑的大型遊樂園。每天產生營收。需 5 名建築師。', minArch: 5, points: 30, size: 44, livable: false, isCommercial: true, minIncome: 500, maxIncome: 2000 },
-            { id: 'bp_restaurant', type: 'blueprint', name: '海帶餐廳藍圖', price: 1200, icon: '🍱', desc: '提供美味海鮮的餐廳。每天產生營收。需 2 名建築師。', minArch: 2, points: 5, size: 19, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
-            { id: 'bp_cafe', type: 'blueprint', name: '櫻花貓咪咖啡廳', price: 1800, icon: '☕', desc: '適合喝下午茶的地方。每天產生營收。需 2 名建築師。', minArch: 2, points: 7, size: 20, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
-            { id: 'bp_farm', type: 'blueprint', name: '貓草農場藍圖', price: 800, icon: '🌱', desc: '種植新鮮貓草的農田。每天產生營收。需 1 名建築師。', minArch: 1, points: 4, size: 23, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
-            { id: 'bp_hotspring', type: 'blueprint', name: '海底溫泉藍圖', price: 3800, icon: '♨️', desc: '療癒身心的溫泉會館。每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 30, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
-            { id: 'bp_cinema', type: 'blueprint', name: '深海電影院藍圖', price: 2800, icon: '🎬', desc: '播放著經典電影的影城。每天產生營收。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
-            { id: 'bp_library', type: 'blueprint', name: '珊瑚圖書館藍圖', price: 2500, icon: '📚', desc: '充滿海洋智慧的公共圖書館。需 2 名建築師。', minArch: 2, points: 8, size: 25, livable: false, isCommercial: false },
-            { id: 'bp_hospital', type: 'blueprint', name: '海星醫院藍圖', price: 3000, icon: '🏥', desc: '保障居民健康的公共醫院。需 3 名建築師。', minArch: 3, points: 12, size: 28, livable: false, isCommercial: false },
-            { id: 'bp_park', type: 'blueprint', name: '櫻花公園藍圖', price: 2000, icon: '⛲', desc: '讓居民散步放鬆的好去處。需 3 名建築師。', minArch: 3, points: 10, size: 31, livable: false, isCommercial: false },
+            { id: 'bp_hotel', type: 'blueprint', name: '海景飯店藍圖', price: 3500, icon: '🏨', desc: '十分氣派的飯店。裝潢後可入住，每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 18, livable: true, isCommercial: true, minIncome: 200, maxIncome: 1500 },
+            { id: 'bp_aquarium', type: 'blueprint', name: '深海水族館藍圖', price: 4000, icon: '🐠', desc: '展示海洋奇觀的水族館。每天產生營收。需 4 名建築師。', minArch: 4, points: 20, size: 22, livable: false, isCommercial: true, minIncome: 200, maxIncome: 1500 },
+            { id: 'bp_amusement', type: 'blueprint', name: '夢想遊樂園藍圖', price: 5000, icon: '🎡', desc: '充滿歡笑的大型遊樂園。每天產生營收。需 5 名建築師。', minArch: 5, points: 30, size: 28, livable: false, isCommercial: true, minIncome: 500, maxIncome: 2000 },
+            { id: 'bp_restaurant', type: 'blueprint', name: '海帶餐廳藍圖', price: 1200, icon: '🍱', desc: '提供美味海鮮的餐廳。每天產生營收。需 2 名建築師。', minArch: 2, points: 5, size: 12, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_cafe', type: 'blueprint', name: '櫻花貓咪咖啡廳', price: 1800, icon: '☕', desc: '適合喝下午茶的地方。每天產生營收。需 2 名建築師。', minArch: 2, points: 7, size: 12, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_farm', type: 'blueprint', name: '貓草農場藍圖', price: 800, icon: '🌱', desc: '種植新鮮貓草的農田。每天產生營收。需 1 名建築師。', minArch: 1, points: 4, size: 14, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_hotspring', type: 'blueprint', name: '海底溫泉藍圖', price: 3800, icon: '♨️', desc: '療癒身心的溫泉會館。每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 19, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_cinema', type: 'blueprint', name: '深海電影院藍圖', price: 2800, icon: '🎬', desc: '播放著經典電影的影城。每天產生營收。需 3 名建築師。', minArch: 3, points: 12, size: 18, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
+            { id: 'bp_library', type: 'blueprint', name: '珊瑚圖書館藍圖', price: 2500, icon: '📚', desc: '充滿海洋智慧的公共圖書館。需 2 名建築師。', minArch: 2, points: 8, size: 16, livable: false, isCommercial: false },
+            { id: 'bp_hospital', type: 'blueprint', name: '海星醫院藍圖', price: 3000, icon: '🏥', desc: '保障居民健康的公共醫院。需 3 名建築師。', minArch: 3, points: 12, size: 18, livable: false, isCommercial: false },
+            { id: 'bp_park', type: 'blueprint', name: '櫻花公園藍圖', price: 2000, icon: '⛲', desc: '讓居民散步放鬆的好去處。需 3 名建築師。', minArch: 3, points: 10, size: 20, livable: false, isCommercial: false },
             { id: 'invite_boss', type: 'character', name: '邀請店長「boss」', price: 1500, icon: '🎀', desc: '讓商店老闆親自成為圓頂的一員！' }
         ];
 
@@ -811,7 +846,9 @@
         let bgmUrl = "";
         let selectedBlueprintToBuild = null; 
         let currentBuildingIdForAssign = null; 
-        let currentBuildingIdForDecorate = null; 
+        let currentBuildingIdForDecorate = null;
+        let currentBuildingIdForDemolish = null;
+        let isDemolishMode = false;
 
         function showMessage(msg) {
             document.getElementById('msg-text').innerText = msg;
@@ -819,6 +856,72 @@
         }
         function closeMessage() {
             document.getElementById('msg-modal').classList.add('hidden');
+        }
+
+        // ================= 縮放控制 =================
+        function changeZoom(val) {
+            document.getElementById('zoom-display').innerText = parseFloat(val).toFixed(1) + 'x';
+            const wrapper = document.getElementById('dome-zoom-wrapper');
+            wrapper.style.width = `${parseFloat(val) * 100}%`;
+            wrapper.style.maxWidth = `${parseFloat(val) * 500}px`;
+        }
+
+        // ================= 拆除模式邏輯 =================
+        function toggleDemolishMode() {
+            isDemolishMode = !isDemolishMode;
+            const btn = document.getElementById('demolish-toggle-btn');
+            if (isDemolishMode) {
+                btn.classList.add('bg-red-500', 'text-white', 'border-red-600', 'shadow-inner');
+                btn.classList.remove('bg-slate-100', 'text-slate-500');
+                btn.innerHTML = '🪓 拆除模式 (已開啟)';
+                selectedBlueprintToBuild = null; // 取消建造模式
+                renderOwnedBlueprints();
+            } else {
+                btn.classList.remove('bg-red-500', 'text-white', 'border-red-600', 'shadow-inner');
+                btn.classList.add('bg-slate-100', 'text-slate-500');
+                btn.innerHTML = '🪓 拆除模式 (關閉)';
+                renderOwnedBlueprints();
+            }
+        }
+
+        function openDemolishModal(buildingId) {
+            currentBuildingIdForDemolish = buildingId;
+            const b = gameState.buildings.find(x => x.id === buildingId);
+            const item = b ? shopItemsData.find(i => i.id === b.bpId) : null;
+            if (!b || !item) return;
+            document.getElementById('demolish-target-name').innerText = item.name;
+            document.getElementById('demolish-modal').classList.remove('hidden');
+        }
+
+        function closeDemolishModal() {
+            currentBuildingIdForDemolish = null;
+            document.getElementById('demolish-modal').classList.add('hidden');
+        }
+
+        async function confirmDemolish() {
+            if (!currentBuildingIdForDemolish) return;
+            const cost = 100;
+            if (gameState.coins < cost) {
+                closeDemolishModal();
+                showMessage(`夢想幣不足！拆除建築需要支付 ${cost} DC 給工程隊。`);
+                return;
+            }
+
+            gameState.coins -= cost;
+            
+            // 將居民移除 (保留在圓頂名單內，只是沒房子住)
+            const b = gameState.buildings.find(x => x.id === currentBuildingIdForDemolish);
+            if (b && b.resident) {
+                // 住客變成無家可歸
+            }
+
+            gameState.buildings = gameState.buildings.filter(x => x.id !== currentBuildingIdForDemolish);
+            
+            closeDemolishModal();
+            renderDomeBuildings();
+            updateUI();
+            saveGame();
+            showMessage(`已花費 ${cost} DC 成功拆除建築！`);
         }
 
         function handleMusicUpload(event) {
@@ -933,9 +1036,10 @@
                 drawingRoad = true;
                 const pos = getPos(e);
                 
+                const scale = getExpansionScale();
                 let snapX = pos.x;
                 let snapY = pos.y;
-                let snapDist = 30;
+                let snapDist = 30 / scale; // 擴張後，吸附距離也要縮短
 
                 if (gameState.roadLines) {
                     gameState.roadLines.forEach(line => {
@@ -1051,25 +1155,23 @@
                 systemInstruction: { parts: [{ text: "你是一個幽默活潑的海底小鎮記者。" }] }
             };
 
-            // 如果有填寫有效的 API Key，嘗試呼叫真正的 AI
             if (userApiKey) {
                 try {
                     const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, payload);
                     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
                     document.getElementById('news-badge').innerText = "由 AI 記者採訪";
                     document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
-                    return; // 成功呼叫則結束函數
+                    return; 
                 } catch(e) {
                     console.error("AI 呼叫失敗，將為您切換至隨機題庫", e);
                 }
             }
 
-            // 無 API Key 或 呼叫失敗時的退路 (Fallback)
             document.getElementById('news-badge').innerText = "圓頂隨機快訊";
             setTimeout(() => {
                 const randomNews = fallbackNews[Math.floor(Math.random() * fallbackNews.length)];
                 document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">【圓頂快訊】<br><br>${randomNews}</p>`;
-            }, 600); // 稍微延遲假裝在打字
+            }, 600);
         }
 
         function closeNews() {
@@ -1098,7 +1200,8 @@
                 
                 let iconHTML = '';
                 if (item.icon.includes('<svg')) {
-                    iconHTML = item.icon;
+                    // 把 SVG 調整為佔滿框架
+                    iconHTML = item.icon.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"');
                 } else {
                     iconHTML = `<span class="text-3xl">${item.icon}</span>`;
                 }
@@ -1264,6 +1367,7 @@
         function openDome() {
             document.getElementById('dome-modal').classList.remove('hidden');
             selectedBlueprintToBuild = null;
+            if (isDemolishMode) toggleDemolishMode(); // 重置拆除模式
             renderOwnedBlueprints();
             renderDomeBuildings();
             redrawRoads();
@@ -1275,6 +1379,7 @@
         function closeDome() {
             document.getElementById('dome-modal').classList.add('hidden');
             selectedBlueprintToBuild = null;
+            if (isDemolishMode) toggleDemolishMode(); // 重置
         }
 
         function renderOwnedBlueprints() {
@@ -1302,7 +1407,7 @@
                 
                 let iconHTML = '';
                 if (item.icon.includes('<svg')) {
-                    iconHTML = item.icon;
+                    iconHTML = item.icon.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"');
                 } else {
                     iconHTML = `<span class="text-3xl">${item.icon}</span>`;
                 }
@@ -1311,6 +1416,8 @@
                 div.className = `blueprint-btn p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected ? 'border-pink-500 bg-pink-50' : 'border-slate-100 bg-white hover:border-pink-200'}`;
                 
                 div.onclick = () => {
+                    if (isDemolishMode) toggleDemolishMode(); // 點擊藍圖自動關閉拆除模式
+
                     if (!canStart) {
                         return showMessage(`需要至少 ${item.minArch} 名建築師才能開始建造這個建築喔！`);
                     }
@@ -1352,6 +1459,8 @@
         }
 
         function handleDomeBuildingPlacement(e, element) {
+            if (isDemolishMode) return; // 拆除模式下不允許蓋房子
+
             const bpInfo = shopItemsData.find(i => i.id === selectedBlueprintToBuild);
             if (!bpInfo) return;
 
@@ -1402,6 +1511,7 @@
         function renderDomeBuildings() {
             const canvasDiv = document.getElementById('dome-buildings-container');
             canvasDiv.innerHTML = ''; 
+            const scale = getExpansionScale();
 
             gameState.buildings.forEach(b => {
                 const item = shopItemsData.find(i => i.id === b.bpId);
@@ -1411,12 +1521,19 @@
                 bDiv.className = 'building-item pointer-events-auto';
                 bDiv.style.left = `${b.x}%`;
                 bDiv.style.top = `${b.y}%`;
-                bDiv.style.width = `${item.size}%`;
-                bDiv.style.height = `${item.size}%`;
+                // 科技升級會讓建築相對變小，騰出更多空間
+                bDiv.style.width = `${item.size / scale}%`;
+                bDiv.style.height = `${item.size / scale}%`;
 
                 bDiv.onclick = (e) => {
-                    if (selectedBlueprintToBuild) return; 
                     e.stopPropagation();
+
+                    if (isDemolishMode) {
+                        openDemolishModal(b.id);
+                        return;
+                    }
+
+                    if (selectedBlueprintToBuild) return; 
 
                     if (b.status === 'completed') {
                         if (item.livable) {
@@ -1452,9 +1569,11 @@
                     
                     let iconHTML = '';
                     if (item.icon.includes('<svg')) {
-                        iconHTML = item.icon;
+                        // 確保 SVG 滿版，解決舊版大小不一的問題
+                        iconHTML = item.icon.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"');
                     } else {
-                        iconHTML = `<span style="font-size: clamp(20px, 5vw, 60px);">${item.icon}</span>`;
+                        // Emoji 也強制轉成滿版的 SVG，完美解決縮放失真的問題
+                        iconHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%"><text x="50%" y="50%" font-size="75" text-anchor="middle" dy="0.35em">${item.icon}</text></svg>`;
                     }
                     
                     let decorBadge = '';
@@ -1692,7 +1811,6 @@
             3. 對話格式嚴格為「姓名: 內容」。
             4. 內容要溫馨、帶點貓咪般的輕快感。`;
 
-            // 有填寫金鑰時，嘗試呼叫真正的 AI 生成對話
             if (userApiKey) {
                 try {
                     const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, {
@@ -1707,13 +1825,12 @@
                             triggerRandomGift();
                         }, i * 900);
                     });
-                    return; // 成功呼叫則結束函數
+                    return; 
                 } catch(e) {
                     console.error("AI 對話生成失敗，將為您切換至隨機題庫", e);
                 }
             }
 
-            // 退路：從隨機題庫中抓取句子，並分配給現有居民
             const chatCount = Math.min(gameState.residents.length, 3) + Math.floor(Math.random() * 2);
             for (let i = 0; i < chatCount; i++) {
                 setTimeout(() => {
@@ -1725,7 +1842,6 @@
             }
         }
 
-        // 把禮物觸發邏輯獨立出來，方便重複利用
         function triggerRandomGift() {
             if (Math.random() < 0.25) {
                 const items = ["晶透珍珠", "五彩貝殼", "海中櫻花葉", "發光海星"];
@@ -1766,7 +1882,14 @@
             const t = gameState.techs.find(x => x.id === tid);
             if (gameState.coins >= t.cost) {
                 gameState.coins -= t.cost; t.lv++;
-                if (tid === 'space') gameState.popLimit += 5;
+                if (tid === 'space') {
+                    gameState.popLimit += 5;
+                    // 擴展區域後，若正在檢視圓頂可以重新渲染
+                    if (!document.getElementById('dome-modal').classList.contains('hidden')) {
+                        renderDomeBuildings();
+                        redrawRoads();
+                    }
+                }
                 t.cost = Math.floor(t.cost * 1.8);
                 updateUI();
                 saveGame(); 
@@ -1955,6 +2078,13 @@
         window.openNews = openNews;
         window.closeNews = closeNews;
         window.clearRoads = clearRoads;
+        
+        // 新增的擴充功能
+        window.changeZoom = changeZoom;
+        window.toggleDemolishMode = toggleDemolishMode;
+        window.openDemolishModal = openDemolishModal;
+        window.closeDemolishModal = closeDemolishModal;
+        window.confirmDemolish = confirmDemolish;
 
         window.onload = () => {
             initCanvas();
