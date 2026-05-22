@@ -491,7 +491,8 @@
             roadLines: [],
             roadData: null,
             bossJoined: false,
-            mashaJoined: false
+            mashaJoined: false,
+            chatQueue: []
         };
 
         // ================= API 設定邏輯 =================
@@ -1800,15 +1801,33 @@
             } else { skillSection.classList.add('hidden'); }
         }
 
+        function pickNextSpeaker() {
+            if (gameState.chatQueue.length === 0) {
+                // 隊列空了就重新洗牌，確保每個人都輪到才重置
+                const indices = gameState.residents.map((_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                gameState.chatQueue = indices;
+            }
+            return gameState.residents[gameState.chatQueue.shift()];
+        }
+
         async function generateDailyChat() {
             if (gameState.residents.length === 0) return;
+            // 當居民名單有異動時重置佇列
+            if (gameState.chatQueue.some(idx => idx >= gameState.residents.length)) {
+                gameState.chatQueue = [];
+            }
             const list = gameState.residents.map(r => `${r.name}(${r.job},${r.personality})`).join(', ');
+            const chatCount = Math.min(gameState.residents.length, 5) + Math.floor(Math.random() * 2);
             const prompt = `你是《海中圓頂》夢想生活的記錄官。目前居民有：${list}。
-            請生成一段包含 3-5 句的群組對話。
+            請生成一段包含 ${chatCount} 句的群組對話，每位居民都要盡量輪流發言。
             規則：
             1. 如果只有 1 位居民，請他對著領主自言自語。
             2. 如果有 2 位以上居民，請讓他們互相聊天、吐槽或分享今天的趣事，展現多人互動。
-            3. 對話格式嚴格為「姓名: 內容」。
+            3. 對話格式嚴格為「姓名: 內容」（內容中不得包含冒號）。
             4. 內容要溫馨、帶點貓咪般的輕快感。`;
 
             if (userApiKey) {
@@ -1819,24 +1838,25 @@
                     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
                     const lines = text.split('\n').filter(l => l.includes(':'));
                     lines.forEach((l, i) => {
-                        const [n, c] = l.split(':');
+                        const colonIdx = l.indexOf(':');
+                        const n = l.substring(0, colonIdx).trim();
+                        const c = l.substring(colonIdx + 1).trim();
                         setTimeout(() => {
-                            addChatMessage(n.trim(), c.trim());
+                            addChatMessage(n, c);
                             triggerRandomGift();
                         }, i * 900);
                     });
-                    return; 
+                    return;
                 } catch(e) {
                     console.error("AI 對話生成失敗，將為您切換至隨機題庫", e);
                 }
             }
 
-            const chatCount = Math.min(gameState.residents.length, 3) + Math.floor(Math.random() * 2);
             for (let i = 0; i < chatCount; i++) {
                 setTimeout(() => {
-                    const randomRes = gameState.residents[Math.floor(Math.random() * gameState.residents.length)];
+                    const speaker = pickNextSpeaker();
                     const randomText = fallbackChats[Math.floor(Math.random() * fallbackChats.length)];
-                    addChatMessage(randomRes.name, randomText);
+                    addChatMessage(speaker.name, randomText);
                     triggerRandomGift();
                 }, i * 900);
             }
@@ -1861,7 +1881,6 @@
                 d.innerText = content;
             } else {
                 let res = gameState.residents.find(r => name.toLowerCase().includes(r.name.toLowerCase()) || r.name.toLowerCase().includes(name.toLowerCase()));
-                if (!res) res = gameState.residents[0];
 
                 d.className = "flex gap-5 items-start animate-fade-in";
                 d.innerHTML = `

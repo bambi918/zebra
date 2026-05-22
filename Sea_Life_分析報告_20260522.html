@@ -220,7 +220,7 @@
     <div class="meta">
       <span>📁 Sea_Life_noBase64_0522.html</span>
       <span>📅 分析日期：2026-05-22</span>
-      <span>🔍 項目：手機 UI 修正 + Gemini 更新後 Bug 審查 + 住戶圖示圓形修正</span>
+      <span>🔍 項目：手機 UI 修正 + Gemini 更新後 Bug 審查 + 住戶圖示圓形修正 + 圓頂頻道發言機制優化</span>
     </div>
   </div>
 
@@ -234,17 +234,17 @@
     <div class="card red">
       <div class="icon">🔴</div>
       <div class="label">嚴重 Bug</div>
-      <div class="value">2 個</div>
+      <div class="value">3 個</div>
     </div>
     <div class="card yellow">
       <div class="icon">🟡</div>
       <div class="label">中等 Bug</div>
-      <div class="value">2 個</div>
+      <div class="value">3 個</div>
     </div>
     <div class="card purple">
       <div class="icon">🟣</div>
       <div class="label">輕微 Bug</div>
-      <div class="value">2 個</div>
+      <div class="value">4 個</div>
     </div>
   </div>
 
@@ -349,6 +349,45 @@
         </tr>
       </table>
 
+      <hr>
+
+      <h3>1-3　圓頂頻道發言機制問題</h3>
+      <p style="font-size:0.85rem; color:#475569; margin-bottom:0.75rem;">
+        畫了 19 個居民 + 2 個老闆，但頻道裡總是同樣幾個人在說話，有些居民從未發言。審查 <code>generateDailyChat()</code> 後發現 4 個問題：
+      </p>
+
+      <table>
+        <tr><th>#</th><th>嚴重度</th><th>函數 / 位置</th><th>問題摘要</th><th>狀態</th></tr>
+        <tr>
+          <td>7</td>
+          <td><span class="bad">🔴 高</span></td>
+          <td><code>generateDailyChat()</code></td>
+          <td><code>Math.min(residents.length, 3)</code> 上限寫死為 3，19 人和 3 人的聊天量完全一樣</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><span class="bad">🔴 高</span></td>
+          <td><code>generateDailyChat()</code> fallback 迴圈</td>
+          <td>每次純隨機抽籤，沒有防止重複，同一人可能連發多則，其他人從未出現</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><span class="info">🟣 低</span></td>
+          <td><code>generateDailyChat()</code> AI 解析</td>
+          <td><code>split(':')</code> 遇到對話內容含冒號時截斷，後半段文字遺失</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><span class="info">🟣 低</span></td>
+          <td><code>addChatMessage()</code></td>
+          <td>名字匹配失敗時強制用 <code>residents[0]</code> 的頭像，導致任何人說話都顯示同一張臉</td>
+          <td><span class="ok">✅ 已修</span></td>
+        </tr>
+      </table>
+
     </div>
   </div>
 
@@ -356,7 +395,7 @@
   <div class="section">
     <div class="section-header">
       <span class="section-num">TWO</span>
-      <h2>修正內容（共 7 處）</h2>
+      <h2>修正內容（共 11 處）</h2>
     </div>
     <div class="section-body">
 
@@ -545,6 +584,88 @@ residentBadge = <span class="str">`&lt;div class="absolute -top-3 -right-3 <span
         </div>
       </div>
 
+      <hr>
+      <h3>💬 圓頂頻道機制修正（4 處）</h3>
+
+      <!-- Fix 7+8: chatCount + chatQueue -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num high">Bug 7+8 — 高</span>
+          <strong>generateDailyChat — 洗牌輪替佇列 + 動態訊息數</strong>
+          <span class="location">generateDailyChat() — fallback 路徑</span>
+        </div>
+        <div class="change-body">
+          <p>兩個問題同時解決：① chatCount 上限寫死為 3，人數再多也只有 4~5 則訊息；② 每次純隨機抽籤，同一居民可能連發多則，其他人永遠不被選到。</p>
+          <p>解法：在 <code>gameState</code> 新增 <code>chatQueue: []</code> 洗牌佇列，並抽出 <code>pickNextSpeaker()</code> 函數。佇列空時重新洗牌，確保每個居民都發過言才開始下一輪。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="cmt">// chatCount 上限寫死</span>
+<span class="kw">const</span> chatCount = Math.<span class="fn">min</span>(gameState.residents.length, <span class="del">3</span>) + Math.<span class="fn">floor</span>(Math.random() * 2);
+<span class="kw">for</span> (<span class="kw">let</span> i = 0; i &lt; chatCount; i++) {
+  <span class="cmt">// 純隨機，會重複</span>
+  <span class="kw">const</span> randomRes = gameState.residents[Math.<span class="fn">floor</span>(Math.random() * gameState.residents.length)];
+  ...
+}</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="cmt">// 新增洗牌函數</span>
+<span class="kw">function</span> <span class="fn">pickNextSpeaker</span>() {
+  <span class="kw">if</span> (gameState.chatQueue.length === 0) {
+    <span class="kw">const</span> indices = gameState.residents.<span class="fn">map</span>((_, i) => i);
+    <span class="cmt">// Fisher-Yates 洗牌</span>
+    <span class="kw">for</span> (<span class="kw">let</span> i = indices.length - 1; i &gt; 0; i--) { ... }
+    gameState.chatQueue = indices;
+  }
+  <span class="kw">return</span> gameState.residents[gameState.chatQueue.<span class="fn">shift</span>()];
+}
+
+<span class="cmt">// chatCount 改為動態</span>
+<span class="kw">const</span> chatCount = Math.<span class="fn">min</span>(gameState.residents.length, <span class="add">5</span>) + Math.<span class="fn">floor</span>(Math.random() * 2);
+<span class="kw">for</span> (<span class="kw">let</span> i = 0; i &lt; chatCount; i++) {
+  <span class="kw">const</span> speaker = <span class="fn">pickNextSpeaker</span>();  <span class="cmt">// 輪替，不重複</span>
+  ...
+}</div>
+        </div>
+      </div>
+
+      <!-- Fix 9: indexOf split -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num low">Bug 9 — 低</span>
+          <strong>generateDailyChat — AI 回應解析改用 indexOf(':')</strong>
+          <span class="location">generateDailyChat() — AI 路徑 lines.forEach</span>
+        </div>
+        <div class="change-body">
+          <p><code>l.split(':')</code> 不限次數，若 AI 生成的對話內容含冒號（如「今天買了：海鮮披薩」），解構賦值 <code>const [n, c]</code> 只取前兩段，第二個冒號後的內容全部丟失。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="del">const [n, c] = l.split(':');</span>  <span class="cmt">// 多個冒號時 c 不完整</span></div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">const</span> colonIdx = l.<span class="fn">indexOf</span>(<span class="str">':'</span>);
+<span class="kw">const</span> n = l.<span class="fn">substring</span>(0, colonIdx).<span class="fn">trim</span>();
+<span class="kw">const</span> c = l.<span class="fn">substring</span>(colonIdx + 1).<span class="fn">trim</span>();  <span class="cmt">// 完整保留冒號後的全部內容</span></div>
+        </div>
+      </div>
+
+      <!-- Fix 10: addChatMessage fallback -->
+      <div class="change-item">
+        <div class="change-header">
+          <span class="change-num low">Bug 10 — 低</span>
+          <strong>addChatMessage — 移除強制 residents[0] 頭像 fallback</strong>
+          <span class="location">addChatMessage() — 居民查找邏輯</span>
+        </div>
+        <div class="change-body">
+          <p>AI 模式下，若回傳的名字有些微差異（多空格、加了稱謂），<code>residents.find()</code> 找不到結果，就強制顯示 <code>residents[0]</code>（第一位居民）的頭像，導致任何人發言都顯示同一張臉。</p>
+          <div class="diff-label before">Before</div>
+          <div class="code-block"><span class="kw">let</span> res = gameState.residents.<span class="fn">find</span>(...);
+<span class="del">if (!res) res = gameState.residents[0];</span>  <span class="cmt">// 強制用第一人的臉</span>
+
+&lt;img src=<span class="str">"${res ? res.img : 'placeholder'}"</span>&gt;</div>
+          <div class="diff-label after">After</div>
+          <div class="code-block"><span class="kw">let</span> res = gameState.residents.<span class="fn">find</span>(...);
+<span class="cmt">// 移除強制 fallback — 找不到就用佔位圖</span>
+
+&lt;img src=<span class="str">"${res ? res.img : 'https://placehold.co/100'}"</span>&gt;</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -604,8 +725,21 @@ residentBadge = <span class="str">`&lt;div class="absolute -top-3 -right-3 <span
     </div>
   </div>
 
+      <div class="tip-box blue">
+        <h4>💬 多人輪替發言的設計原則</h4>
+        <ul>
+          <li>純隨機（Math.random()）在小樣本下必然產生「偏心」，人越多越嚴重；10+ 個角色時務必改用洗牌輪替</li>
+          <li>Fisher-Yates shuffle + queue 是最輕量的公平輪替方案：洗牌一次、逐個取出、取完再洗</li>
+          <li><code>chatQueue</code> 存入 gameState 後會隨存檔持久化，重新載入時佇列不重置，輪替狀態不中斷</li>
+          <li>居民新增 / 刪除時需清空佇列（queue 裡的舊 index 可能越界），程式碼已在每次 generateDailyChat 進入時自動檢查</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
   <div class="footer">
-    Sea_Life_noBase64_0522.html &nbsp;|&nbsp; 分析報告 v2 &nbsp;|&nbsp; 2026-05-22
+    Sea_Life_noBase64_0522.html &nbsp;|&nbsp; 分析報告 v3 &nbsp;|&nbsp; 2026-05-22
   </div>
 
 </div>
