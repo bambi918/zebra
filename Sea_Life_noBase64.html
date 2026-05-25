@@ -860,6 +860,7 @@
         let currentBuildingIdForDecorate = null;
         let currentBuildingIdForDemolish = null;
         let isDemolishMode = false;
+        let chatStreamTimeout = null;
 
         function showMessage(msg) {
             document.getElementById('msg-text').innerText = msg;
@@ -1823,6 +1824,20 @@
             return gameState.residents[gameState.chatQueue.shift()];
         }
 
+        function scheduleChatStream() {
+            if (chatStreamTimeout) clearTimeout(chatStreamTimeout);
+            if (gameState.residents.length === 0) return;
+            const delay = 6000 + Math.floor(Math.random() * 6000);
+            chatStreamTimeout = setTimeout(() => {
+                if (gameState.residents.length === 0) return;
+                const speaker = pickNextSpeaker();
+                const randomText = fallbackChats[Math.floor(Math.random() * fallbackChats.length)];
+                addChatMessage(speaker.name, randomText);
+                triggerRandomGift();
+                scheduleChatStream();
+            }, delay);
+        }
+
         async function generateDailyChat() {
             if (gameState.residents.length === 0) return;
             // 當居民名單有異動時重置佇列
@@ -1857,6 +1872,7 @@
                             triggerRandomGift();
                         }, i * 900);
                     });
+                    setTimeout(scheduleChatStream, lines.length * 900 + 1000);
                     return;
                 }
             } catch(e) {
@@ -1871,6 +1887,7 @@
                     triggerRandomGift();
                 }, i * 900);
             }
+            setTimeout(scheduleChatStream, chatCount * 900 + 1000);
         }
 
         function triggerRandomGift() {
@@ -2006,6 +2023,7 @@
             const architects = gameState.residents.filter(r => r.job === '建築師').length;
             gameState.popLimit += (architects * 2);
 
+            if (chatStreamTimeout) { clearTimeout(chatStreamTimeout); chatStreamTimeout = null; }
             document.getElementById('chat-container').innerHTML = '';
             addChatMessage("系統", `--- 第 ${gameState.day} 天 清晨的櫻花隨波逐流 ---`, "system");
             
