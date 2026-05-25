@@ -483,7 +483,7 @@
             techs: [
                 { id: 'tourism', name: '櫻花咖啡廳', lv: 0, cost: 300, desc: '每日被動獲得 150 DC' },
                 { id: 'garden', name: '肉球溫室', lv: 0, cost: 500, desc: '提升居民送禮機率' },
-                { id: 'space', name: '圓頂擴張工程', lv: 0, cost: 1000, desc: '擴大圓頂內部可用空間與 5 人上限' }
+                { id: 'space', name: '圓頂擴張工程', lv: 0, cost: 1000, desc: '擴大圓頂 5 人上限' }
             ],
             blueprints: [],
             buildings: [],
@@ -525,7 +525,7 @@
             "🛠️ 建築工地的敲打聲成為了圓頂最新的 ASMR。有居民甚至每天去工地旁野餐，表示十分療癒。",
             "🐟 昨晚有不明發光魚群在圓頂外游蕩，引發居民熱烈圍觀，甚至有人試圖透過玻璃與他們對話！",
             "💎 夢想幣 (DC) 的匯率今日保持穩定。商店老闆 boss 表示近期的消費力道相當強勁，尤其是瑪莎的店！",
-            "🎉 據說有位熱心的居民偷偷在準備一個驚喜派對，為了慶祝圓頂的新設施落成，請大家拭目以待！",
+            "🎉 據說有位熱心的居民偷偷在準備一個驚喜派對，為了慶祝圓頂的新設施落成，請大家拭目待待！",
             "☕ 櫻花咖啡廳的特調「海帶拿鐵」再度售罄！店長呼籲大家明天請早，或者考慮點杯純淨海水。",
             "🐾 圓頂內的步道上發現了大量神秘的肉球印記，目前推測是某位熱情居民半夜夜跑的傑作。",
             "🌊 專家指出，圓頂外圍的海流近日較為強勁，但圓頂內部依然溫暖如春，請居民們安心睡午覺。"
@@ -553,10 +553,12 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    // 4xx 是 key 無效或請求錯誤，重試也沒用，直接拋出
+                    if (res.status >= 400 && res.status < 500) throw new Error(`Client error: ${res.status}`);
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                     return await res.json();
                 } catch (e) {
-                    if (i === retries - 1) throw e;
+                    if (i === retries - 1 || e.message.startsWith('Client error')) throw e;
                     await new Promise(r => setTimeout(r, delays[i]));
                 }
             }
@@ -663,7 +665,11 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = `海中圓頂_第${gameState.day}天_存檔.json`;
+            
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            
             URL.revokeObjectURL(url);
             showMessage(`📥 存檔已匯出！\n第 ${gameState.day} 天 | 人口 ${gameState.residents.length} 人\n\n可以在其他瀏覽器或裝置用「匯入」讀取。`);
         }
@@ -684,6 +690,8 @@
                     data.buildings = data.buildings.filter(b => b.bpId !== 'bp_road');
                     data.buildings.forEach(b => {
                         if (b.resident && !b.decoration) b.decoration = '經典風裝潢';
+                        // 海景飯店已改為商業用途（不可入住），清除舊存檔中的居民住所
+                        if (b.bpId === 'bp_hotel' && b.resident) b.resident = null;
                     });
                     const defaultTechs = gameState.techs;
                     gameState = { ...gameState, ...data };
@@ -764,6 +772,8 @@
                     if (b.resident && !b.decoration) {
                         b.decoration = '經典風裝潢';
                     }
+                    // 海景飯店已改為商業用途（不可入住），清除舊存檔中的居民住所
+                    if (b.bpId === 'bp_hotel' && b.resident) b.resident = null;
                 });
 
                 const defaultTechs = gameState.techs;
@@ -814,7 +824,7 @@
             { id: 'bp_modern_smart', type: 'blueprint', name: '現代科技智慧宅', price: 3800, icon: '<svg viewBox="0 0 100 100"><path d="M 15 90 L 15 50 L 50 30 L 85 50 L 85 90 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/><polygon points="15,50 50,30 85,50 50,65" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="40" y="70" width="20" height="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/><circle cx="50" cy="80" r="3" fill="#38bdf8"/><rect x="25" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><rect x="60" y="55" width="15" height="15" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/><line x1="5" y1="90" x2="95" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '全自動化的高科技現代宅。裝潢後可入住。需 3 名建築師。', minArch: 3, points: 15, size: 16, livable: true, isCommercial: false },
             { id: 'bp_modern_loft', type: 'blueprint', name: '現代挑高工業風', price: 2200, icon: '<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="70" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="25" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><rect x="55" y="30" width="20" height="50" fill="#e0f2fe" stroke="#94a3b8" stroke-width="2"/><line x1="25" y1="55" x2="45" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="55" y1="55" x2="75" y2="55" stroke="#94a3b8" stroke-width="2"/><line x1="35" y1="30" x2="35" y2="80" stroke="#94a3b8" stroke-width="2"/><line x1="65" y1="30" x2="65" y2="80" stroke="#94a3b8" stroke-width="2"/><rect x="15" y="10" width="70" height="10" fill="#334155"/><line x1="10" y1="90" x2="90" y2="90" stroke="#475569" stroke-width="3"/></svg>', desc: '大面落地窗的工業風現代公寓。裝潢後可入住。需 2 名建築師。', minArch: 2, points: 8, size: 14, livable: true, isCommercial: false },
 
-            { id: 'bp_hotel', type: 'blueprint', name: '海景飯店藍圖', price: 3500, icon: '🏨', desc: '十分氣派的飯店。裝潢後可入住，每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 18, livable: true, isCommercial: true, minIncome: 200, maxIncome: 1500 },
+            { id: 'bp_hotel', type: 'blueprint', name: '海景飯店藍圖', price: 3500, icon: '🏨', desc: '十分氣派的飯店，歡迎各方旅客入住。每天產生營收。需 3 名建築師。', minArch: 3, points: 15, size: 18, livable: false, isCommercial: true, minIncome: 200, maxIncome: 1500 },
             { id: 'bp_aquarium', type: 'blueprint', name: '深海水族館藍圖', price: 4000, icon: '🐠', desc: '展示海洋奇觀的水族館。每天產生營收。需 4 名建築師。', minArch: 4, points: 20, size: 22, livable: false, isCommercial: true, minIncome: 200, maxIncome: 1500 },
             { id: 'bp_amusement', type: 'blueprint', name: '夢想遊樂園藍圖', price: 5000, icon: '🎡', desc: '充滿歡笑的大型遊樂園。每天產生營收。需 5 名建築師。', minArch: 5, points: 30, size: 28, livable: false, isCommercial: true, minIncome: 500, maxIncome: 2000 },
             { id: 'bp_restaurant', type: 'blueprint', name: '海帶餐廳藍圖', price: 1200, icon: '🍱', desc: '提供美味海鮮的餐廳。每天產生營收。需 2 名建築師。', minArch: 2, points: 5, size: 12, livable: false, isCommercial: true, minIncome: 300, maxIncome: 1000 },
@@ -1156,16 +1166,15 @@
                 systemInstruction: { parts: [{ text: "你是一個幽默活潑的海底小鎮記者。" }] }
             };
 
-            if (userApiKey) {
-                try {
-                    const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, payload);
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
-                    document.getElementById('news-badge').innerText = "由 AI 記者採訪";
-                    document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
-                    return; 
-                } catch(e) {
-                    console.error("AI 呼叫失敗，將為您切換至隨機題庫", e);
-                }
+            try {
+                const apiKey = userApiKey || "";
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, payload);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "今天圓頂一切平安，櫻花一樣美麗！";
+                document.getElementById('news-badge').innerText = "由 AI 記者採訪";
+                document.getElementById('news-content').innerHTML = `<p class="whitespace-pre-line leading-relaxed text-slate-700">${text}</p>`;
+                return;
+            } catch(e) {
+                console.error("AI 呼叫失敗，將為您切換至隨機題庫", e);
             }
 
             document.getElementById('news-badge').innerText = "圓頂隨機快訊";
@@ -1830,15 +1839,17 @@
             3. 對話格式嚴格為「姓名: 內容」（內容中不得包含冒號）。
             4. 內容要溫馨、帶點貓咪般的輕快感。`;
 
-            if (userApiKey) {
-                try {
-                    const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`, {
-                        contents: [{parts:[{text: prompt}]}]
-                    });
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                    const lines = text.split('\n').filter(l => l.includes(':'));
+            try {
+                const apiKey = userApiKey || "";
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+                    contents: [{parts:[{text: prompt}]}]
+                });
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const lines = text.split('\n').filter(l => l.includes(':'));
+                if (lines.length > 0) {
                     lines.forEach((l, i) => {
                         const colonIdx = l.indexOf(':');
+                        if (colonIdx === -1) return;
                         const n = l.substring(0, colonIdx).trim();
                         const c = l.substring(colonIdx + 1).trim();
                         setTimeout(() => {
@@ -1847,9 +1858,9 @@
                         }, i * 900);
                     });
                     return;
-                } catch(e) {
-                    console.error("AI 對話生成失敗，將為您切換至隨機題庫", e);
                 }
+            } catch(e) {
+                console.error("AI 對話生成失敗，將為您切換至隨機題庫", e);
             }
 
             for (let i = 0; i < chatCount; i++) {
