@@ -1827,15 +1827,49 @@
         function scheduleChatStream() {
             if (chatStreamTimeout) clearTimeout(chatStreamTimeout);
             if (gameState.residents.length === 0) return;
-            const delay = 6000 + Math.floor(Math.random() * 6000);
-            chatStreamTimeout = setTimeout(() => {
-                if (gameState.residents.length === 0) return;
-                const speaker = pickNextSpeaker();
-                const randomText = fallbackChats[Math.floor(Math.random() * fallbackChats.length)];
-                addChatMessage(speaker.name, randomText);
-                triggerRandomGift();
-                scheduleChatStream();
-            }, delay);
+            const delay = 15000 + Math.floor(Math.random() * 15000);
+            chatStreamTimeout = setTimeout(() => generateStreamBatch(), delay);
+        }
+
+        async function generateStreamBatch() {
+            if (gameState.residents.length === 0) return;
+            const count = 2 + Math.floor(Math.random() * 4);
+            const list = gameState.residents.map(r => `${r.name}(${r.job},${r.personality})`).join(', ');
+            const prompt = `你是《海中圓頂》記錄官。居民有：${list}。
+請生成 ${count} 句日常閒聊，盡量讓不同居民輪流發言。
+格式嚴格為「姓名: 內容」（內容不含冒號），語氣溫馨輕快。`;
+
+            try {
+                const apiKey = userApiKey || "";
+                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+                    contents: [{parts:[{text: prompt}]}]
+                });
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const lines = text.split('\n').filter(l => l.includes(':'));
+                if (lines.length > 0) {
+                    lines.forEach((l, i) => {
+                        const colonIdx = l.indexOf(':');
+                        if (colonIdx === -1) return;
+                        const n = l.substring(0, colonIdx).trim();
+                        const c = l.substring(colonIdx + 1).trim();
+                        setTimeout(() => { addChatMessage(n, c); triggerRandomGift(); }, i * 900);
+                    });
+                    setTimeout(scheduleChatStream, lines.length * 900 + 1000);
+                    return;
+                }
+            } catch(e) {
+                console.error("串流 AI 對話失敗，切換題庫", e);
+            }
+
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const speaker = pickNextSpeaker();
+                    const randomText = fallbackChats[Math.floor(Math.random() * fallbackChats.length)];
+                    addChatMessage(speaker.name, randomText);
+                    triggerRandomGift();
+                }, i * 900);
+            }
+            setTimeout(scheduleChatStream, count * 900 + 1000);
         }
 
         async function generateDailyChat() {
